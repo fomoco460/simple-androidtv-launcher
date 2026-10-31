@@ -1,0 +1,136 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-family-current: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  html, body, #root {
+    width: 100%;
+    height: 100%;
+    max-width: 100vw;
+    max-height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  /* Universal reset to prevent WebView / browser from drawing ugly yellow/orange focus rings or tap highlights */
+  *, *::before, *::after {
+    -webkit-tap-highlight-color: transparent !important;
+    outline: none !important;
+  }
+
+  :focus,
+  :focus-visible,
+  *:focus,
+  *:focus-visible,
+  button:focus,
+  button:focus-visible,
+  a:focus,
+  a:focus-visible,
+  div:focus,
+  div:focus-visible {
+    outline: none !important;
+    -webkit-focus-ring-color: transparent !important;
+  }
+
+  button::-moz-focus-inner {
+    border: 0 !important;
+  }
+
+  body {
+    font-family: var(--font-family-current);
+    user-select: none;
+    -webkit-user-select: none;
+    background-color: #07090e;
+  }
+}
+
+/* Glass & Frosted Material Presets */
+.material-soft {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.material-frosted {
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.material-clear {
+  background: rgba(10, 12, 16, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.material-solid {
+  background: #14171f;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Focus styles - smooth GPU-accelerated scaling with zero layout reflow */
+.focus-glass {
+  background: rgba(255, 255, 255, 0.26) !important;
+  border-color: rgba(255, 255, 255, 0.8) !important;
+  box-shadow: 0 10px 28px -4px rgba(0, 0, 0, 0.6), 0 0 22px rgba(255, 255, 255, 0.22);
+  transform: scale(1.05);
+  will-change: transform;
+}
+
+.focus-glow {
+  background: rgba(255, 255, 255, 0.22) !important;
+  border-color: rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
+  transform: scale(1.05);
+  will-change: transform;
+}
+
+.focus-border {
+  background: rgba(255, 255, 255, 0.16) !important;
+  border-color: #ffffff !important;
+  box-shadow: 0 0 0 2px #ffffff;
+  transform: scale(1.04);
+  will-change: transform;
+}
+
+.focus-pop {
+  background: rgba(255, 255, 255, 0.3) !important;
+  border-color: rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.7);
+  transform: scale(1.07);
+  will-change: transform;
+}
+
+/* Custom Scrollbar for TV list */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+}
+
+/* Hide any default WebKit / Chromium video controls, play overlays or error placeholders */
+video::-webkit-media-controls,
+video::-webkit-media-controls-enclosure,
+video::-webkit-media-controls-panel,
+video::-webkit-media-controls-play-button,
+video::-webkit-media-controls-start-playback-button,
+video::-webkit-media-controls-overlay-play-button {
+  display: none !important;
+  -webkit-appearance: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}

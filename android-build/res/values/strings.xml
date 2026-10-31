@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Clean Launcher</string>
+    <string name="accessibility_service_label">Clean Launcher Home Button Interceptor</string>
+    <string name="accessibility_service_description">Intercepts the TV remote Home key on Android TV 14 / Google TV to seamlessly return to Clean Launcher.</string>
+</resources>
