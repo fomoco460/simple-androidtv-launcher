@@ -215,6 +215,7 @@ export const LocationModal: React.FC<LocationModalProps> = ({
         } else if (focusZone === 'search') {
           soundService.playSelect();
           searchInputRef.current?.focus();
+          (window as any).AndroidBridge?.showKeyboard?.();
         } else if (focusZone === 'autodetect') {
           handleUseAutoDetect();
         } else if (focusZone === 'list') {
@@ -322,6 +323,7 @@ export const LocationModal: React.FC<LocationModalProps> = ({
             }
             value={searchQuery}
             onFocus={() => setFocusZone('search')}
+            onBlur={() => (window as any).AndroidBridge?.hideKeyboard?.()}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
@@ -339,14 +341,14 @@ export const LocationModal: React.FC<LocationModalProps> = ({
             }}
             className={`w-full rounded-2xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-white/40 focus:outline-none transition-all ${
               focusZone === 'search'
-                ? 'bg-white/15 border-2 border-white ring-2 ring-white/50 shadow-xl scale-[1.01]'
+                ? 'bg-white/15 border-2 border-white ring-2 ring-white/50 shadow-xl'
                 : 'bg-white/5 border border-white/10 hover:border-white/25 hover:bg-white/10'
             }`}
           />
         </form>
 
         {/* Search Results or Presets */}
-        <div className="flex-1 max-h-56 overflow-y-auto space-y-2 pr-1 no-scrollbar">
+        <div className="flex-1 max-h-56 overflow-y-auto space-y-2 p-1.5 scroll-py-2 no-scrollbar">
           {/* Auto-detect button */}
           <button
             onClick={handleUseAutoDetect}
@@ -355,7 +357,7 @@ export const LocationModal: React.FC<LocationModalProps> = ({
             }}
             className={`w-full flex items-center justify-between p-3 rounded-2xl border text-xs font-semibold cursor-pointer transition-all ${
               focusZone === 'autodetect'
-                ? 'bg-white text-slate-900 border-white shadow-xl scale-[1.01] ring-2 ring-white z-10'
+                ? 'bg-white text-slate-900 border-white shadow-xl ring-2 ring-white z-10'
                 : 'bg-white/5 hover:bg-white/15 border-white/5 text-white'
             }`}
           >
@@ -397,7 +399,7 @@ export const LocationModal: React.FC<LocationModalProps> = ({
                     }}
                     className={`w-full flex items-center justify-between p-3 rounded-2xl border text-xs cursor-pointer transition-all text-left ${
                       isFocused
-                        ? 'bg-white text-slate-900 border-white shadow-xl scale-[1.01] ring-2 ring-white z-10'
+                        ? 'bg-white text-slate-900 border-white shadow-xl ring-2 ring-white z-10'
                         : 'bg-white/5 hover:bg-white/20 border-white/5 text-white'
                     }`}
                   >
@@ -444,7 +446,7 @@ export const LocationModal: React.FC<LocationModalProps> = ({
                       }}
                       className={`p-2.5 rounded-xl border text-xs font-medium text-left cursor-pointer transition-all truncate ${
                         isFocused
-                          ? 'bg-white text-slate-900 border-white shadow-lg ring-2 ring-white scale-[1.02] z-10 font-bold'
+                          ? 'bg-white text-slate-900 border-white shadow-lg ring-2 ring-white z-10 font-bold'
                           : 'bg-white/5 hover:bg-white/15 border-white/5 text-white'
                       }`}
                     >
@@ -477,7 +479,7 @@ export const LocationModal: React.FC<LocationModalProps> = ({
             }}
             className={`px-4 py-1.5 rounded-xl font-medium transition-all cursor-pointer ${
               focusZone === 'footer'
-                ? 'bg-white text-slate-900 ring-2 ring-white scale-105 shadow-md'
+                ? 'bg-white text-slate-900 ring-2 ring-white shadow-md'
                 : 'bg-white/10 hover:bg-white/20 text-white'
             }`}
           >

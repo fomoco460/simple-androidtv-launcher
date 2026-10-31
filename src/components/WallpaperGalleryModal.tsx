@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BackgroundPreset, LauncherSettings } from '../types';
 import { soundService } from '../services/sound';
+import { useSpatialNav } from '../hooks/useSpatialNav';
 import { CLEAN_FRAME_WALLPAPERS, CleanFrameWallpaper } from '../data/cleanFrameWallpapers';
 import {
   Image as ImageIcon,
@@ -19,13 +20,26 @@ interface WallpaperGalleryModalProps {
   onClose: () => void;
 }
 
+const ambientIds = ['desert-stars', 'nordic-aurora', 'misty-pines', 'cyber-dusk', 'deep-space', 'sunset-dunes'];
+
 export const WallpaperGalleryModal: React.FC<WallpaperGalleryModalProps> = ({
   currentPreset,
   customUrl = '',
   onSelectWallpaper,
   onClose,
 }) => {
-  const [activeCategory, setActiveCategory] = useState<'cleanframe' | 'ambient' | 'custom'>('cleanframe');
+  const [activeCategory, setActiveCategory] = useState<'cleanframe' | 'ambient' | 'custom'>(
+    () =>
+      ambientIds.includes(currentPreset as string)
+        ? 'ambient'
+        : CLEAN_FRAME_WALLPAPERS.some((w) => w.presetId === currentPreset)
+          ? 'cleanframe'
+          : currentPreset === 'custom'
+            ? 'custom'
+            : 'cleanframe',
+  );
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const isNative = typeof window !== 'undefined' && !!(window as any).AndroidBridge?.isNative?.();
   const [customInputUrl, setCustomInputUrl] = useState<string>(customUrl || '');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -38,25 +52,8 @@ export const WallpaperGalleryModal: React.FC<WallpaperGalleryModalProps> = ({
     { id: 'sunset-dunes', name: 'Sunset Dunes', desc: 'Warm desert sunset with amber glow', tone: 'dark' },
   ];
 
-  // TV Remote Escape/Back
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (document.activeElement?.tagName === 'INPUT') {
-        if (e.key === 'Escape' || e.keyCode === 27) {
-          (document.activeElement as HTMLElement).blur();
-          return;
-        }
-        return;
-      }
-      if (e.key === 'Escape' || e.key === 'Back' || e.keyCode === 27 || e.keyCode === 4) {
-        e.preventDefault();
-        soundService.playBack();
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  // D-pad: arrows move between controls, Enter presses, Back closes.
+  useSpatialNav({ containerRef: rootRef, onBack: onClose });
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -83,7 +80,7 @@ export const WallpaperGalleryModal: React.FC<WallpaperGalleryModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-4 md:p-6 select-none animate-fadeIn">
+    <div ref={rootRef} className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-4 md:p-6 select-none animate-fadeIn">
       <div className="relative w-full max-w-5xl h-[86vh] max-h-[760px] bg-zinc-950/95 border border-white/10 rounded-3xl shadow-2xl flex flex-col overflow-hidden text-white">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-gradient-to-r from-sky-950/30 via-zinc-900/60 to-zinc-950/40 shrink-0">
@@ -111,6 +108,7 @@ export const WallpaperGalleryModal: React.FC<WallpaperGalleryModalProps> = ({
                   soundService.playMove();
                   setActiveCategory('cleanframe');
                 }}
+                data-nav
                 className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
                   activeCategory === 'cleanframe' ? 'bg-white text-slate-900 font-bold shadow' : 'text-zinc-400 hover:text-white'
                 }`}
@@ -124,6 +122,7 @@ export const WallpaperGalleryModal: React.FC<WallpaperGalleryModalProps> = ({
                   soundService.playMove();
                   setActiveCategory('ambient');
                 }}
+                data-nav
                 className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
                   activeCategory === 'ambient' ? 'bg-white text-slate-900 font-bold shadow' : 'text-zinc-400 hover:text-white'
                 }`}
@@ -137,6 +136,7 @@ export const WallpaperGalleryModal: React.FC<WallpaperGalleryModalProps> = ({
                   soundService.playMove();
                   setActiveCategory('custom');
                 }}
+                data-nav
                 className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
                   activeCategory === 'custom' ? 'bg-white text-slate-900 font-bold shadow' : 'text-zinc-400 hover:text-white'
                 }`}
@@ -151,6 +151,7 @@ export const WallpaperGalleryModal: React.FC<WallpaperGalleryModalProps> = ({
                 soundService.playBack();
                 onClose();
               }}
+              data-nav
               className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition cursor-pointer ml-2"
               title="Close (Esc)"
             >
@@ -160,7 +161,7 @@ export const WallpaperGalleryModal: React.FC<WallpaperGalleryModalProps> = ({
         </div>
 
         {/* Modal Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        <div className="flex-1 overflow-y-auto p-6 scroll-py-6 space-y-4">
           {/* Category 1: CleanFrame 15 Wallpapers */}
           {activeCategory === 'cleanframe' && (
             <div>
@@ -182,10 +183,12 @@ export const WallpaperGalleryModal: React.FC<WallpaperGalleryModalProps> = ({
                         onSelectWallpaper(wp.presetId as BackgroundPreset);
                         onClose();
                       }}
+                      data-nav
+                      {...(isSelected ? { 'data-nav-initial': true } : {})}
                       className={`group relative flex flex-col rounded-2xl overflow-hidden border text-left transition-all duration-200 cursor-pointer ${
                         isSelected
-                          ? 'border-white ring-2 ring-white shadow-2xl scale-[1.02] z-10'
-                          : 'border-white/10 hover:border-white/40 hover:scale-[1.01]'
+                          ? 'border-white ring-2 ring-white shadow-2xl z-10'
+                          : 'border-white/10 hover:border-white/40'
                       }`}
                     >
                       <div className="relative aspect-video w-full overflow-hidden bg-black">
@@ -246,10 +249,12 @@ export const WallpaperGalleryModal: React.FC<WallpaperGalleryModalProps> = ({
                         onSelectWallpaper(theme.id as BackgroundPreset);
                         onClose();
                       }}
+                      data-nav
+                      {...(isSelected ? { 'data-nav-initial': true } : {})}
                       className={`group relative flex flex-col rounded-2xl overflow-hidden border text-left transition-all duration-200 cursor-pointer ${
                         isSelected
-                          ? 'border-white ring-2 ring-white shadow-2xl scale-[1.02] z-10'
-                          : 'border-white/10 hover:border-white/40 hover:scale-[1.01]'
+                          ? 'border-white ring-2 ring-white shadow-2xl z-10'
+                          : 'border-white/10 hover:border-white/40'
                       }`}
                     >
                       <div className="relative aspect-video w-full overflow-hidden bg-gradient-to-br from-slate-900 via-indigo-950 to-black flex items-center justify-center">
@@ -289,6 +294,7 @@ export const WallpaperGalleryModal: React.FC<WallpaperGalleryModalProps> = ({
           {activeCategory === 'custom' && (
             <div className="max-w-2xl mx-auto space-y-6 py-4">
               {/* File upload card */}
+              {!isNative && (
               <div className="p-8 rounded-3xl bg-white/[0.03] border border-dashed border-white/20 flex flex-col items-center justify-center text-center space-y-4">
                 <div className="w-14 h-14 rounded-2xl bg-sky-500/10 text-sky-400 flex items-center justify-center">
                   <Upload className="w-7 h-7" />
@@ -309,6 +315,7 @@ export const WallpaperGalleryModal: React.FC<WallpaperGalleryModalProps> = ({
                 />
 
                 <button
+                  data-nav
                   onClick={() => fileInputRef.current?.click()}
                   className="px-6 py-3 rounded-xl bg-white text-slate-900 font-bold text-xs hover:bg-white/90 transition shadow-xl cursor-pointer flex items-center gap-2"
                 >
@@ -316,6 +323,7 @@ export const WallpaperGalleryModal: React.FC<WallpaperGalleryModalProps> = ({
                   Select Wallpaper File
                 </button>
               </div>
+              )}
 
               {/* URL card */}
               <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3">
@@ -326,6 +334,7 @@ export const WallpaperGalleryModal: React.FC<WallpaperGalleryModalProps> = ({
 
                 <div className="flex items-center gap-2">
                   <input
+                    data-nav
                     type="url"
                     placeholder="https://images.unsplash.com/... or https://..."
                     value={customInputUrl}
@@ -337,6 +346,7 @@ export const WallpaperGalleryModal: React.FC<WallpaperGalleryModalProps> = ({
                   />
 
                   <button
+                    data-nav
                     onClick={handleApplyCustomUrl}
                     disabled={!customInputUrl.trim()}
                     className="px-5 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 disabled:opacity-40 text-white font-bold text-xs transition cursor-pointer"
@@ -352,15 +362,6 @@ export const WallpaperGalleryModal: React.FC<WallpaperGalleryModalProps> = ({
         {/* Footer */}
         <div className="px-6 py-3 border-t border-white/10 bg-zinc-950 flex items-center justify-between text-xs text-zinc-500 shrink-0">
           <span>CleanFrame Wallpapers • Photographs from Unsplash &amp; CleanFrame project</span>
-          <button
-            onClick={() => {
-              soundService.playBack();
-              onClose();
-            }}
-            className="px-4 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium transition cursor-pointer"
-          >
-            Done
-          </button>
         </div>
       </div>
     </div>

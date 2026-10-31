@@ -172,6 +172,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
   const [focusZone, setFocusZone] = useState<'header' | 'content'>('content');
   const [headerIndex, setHeaderIndex] = useState<number>(1); // 0: Home, 1: Appearance, 2: Organize, 3: Android
   const [activeRow, setActiveRow] = useState<number>(0);
+  const [extraIndex, setExtraIndex] = useState<number>(0); // 0 sound, 1 safe-zone, 2 temp unit, 3 location
   const [organizeZone, setOrganizeZone] = useState<'dock' | 'unpinned'>('dock');
   const [organizeDockIndex, setOrganizeDockIndex] = useState<number>(0);
   const [organizeUnpinnedIndex, setOrganizeUnpinnedIndex] = useState<number>(0);
@@ -186,6 +187,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
     (!!(window as any).AndroidBridge?.isNative?.() ||
       /Android|AFT|GoogleTV|SmartTV|AppleTV|HbbTV|CrKey/i.test(navigator.userAgent));
   const maxAppearanceRow = isTvOrNative ? 8 : 9;
+  const extrasRow = maxAppearanceRow + 1; // quick-settings strip under the preview
 
   const dockApps = apps.filter((a) => a.inDock);
   const nonDockApps = apps.filter((a) => !a.inDock);
@@ -550,7 +552,30 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
       } else if (isDown) {
         e.preventDefault();
         soundService.playMove();
-        setActiveRow((prev) => Math.min(maxAppearanceRow, prev + 1));
+        setActiveRow((prev) => Math.min(extrasRow, prev + 1));
+      } else if (activeRow === extrasRow && (isRight || isLeft || isSelect)) {
+        e.preventDefault();
+        if (isRight) {
+          soundService.playMove();
+          setExtraIndex((prev) => Math.min(3, prev + 1));
+        } else if (isLeft) {
+          soundService.playMove();
+          setExtraIndex((prev) => Math.max(0, prev - 1));
+        } else {
+          soundService.playSelect();
+          if (extraIndex === 0) {
+            onUpdateSettings({ soundEffects: !settings.soundEffects });
+            soundService.enabled = !settings.soundEffects;
+          } else if (extraIndex === 1) {
+            onUpdateSettings({
+              safeZone: settings.safeZone === 0 ? 3 : settings.safeZone === 3 ? 5 : 0,
+            });
+          } else if (extraIndex === 2) {
+            onUpdateSettings({ tempUnit: settings.tempUnit === 'C' ? 'F' : 'C' });
+          } else {
+            onOpenLocationModal?.();
+          }
+        }
       } else if (isRight) {
         e.preventDefault();
         if (activeRow === 5) {
@@ -1223,17 +1248,6 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
                 <span className="text-xs text-white/60">
                   Arrange items in your floating dock. Changes reflect live on TV preview.
                 </span>
-                <button
-                  onClick={() => {
-                    soundService.playSelect();
-                    setActiveTab('appearance');
-                    setFocusZone('content');
-                    setHeaderIndex(1);
-                  }}
-                  className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white font-semibold text-xs cursor-pointer"
-                >
-                  Done
-                </button>
               </div>
 
               {/* Dock Apps Reorder List */}
@@ -1481,7 +1495,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
 
           {/* Quick TV Configuration Extras (Overscan, Sound, Weather) */}
           <div className="mt-2.5 flex flex-wrap items-center justify-center gap-3 text-xs text-white/60">
-            <label className="flex items-center gap-2 cursor-pointer hover:text-white">
+            <label className={`flex items-center gap-2 cursor-pointer hover:text-white rounded px-1.5 py-0.5 ${activeRow === extrasRow && extraIndex === 0 ? 'ring-2 ring-white ring-offset-2 ring-offset-black' : ''}`}>
               <input
                 type="checkbox"
                 checked={settings.soundEffects}
@@ -1503,7 +1517,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
                       settings.safeZone === 0 ? 3 : settings.safeZone === 3 ? 5 : 0,
                   })
                 }
-                className="px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-white font-mono"
+                className={`px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-white font-mono ${activeRow === extrasRow && extraIndex === 1 ? 'ring-2 ring-white ring-offset-2 ring-offset-black' : ''}`}
               >
                 {settings.safeZone}%
               </button>
@@ -1515,7 +1529,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
                 onClick={() =>
                   onUpdateSettings({ tempUnit: settings.tempUnit === 'C' ? 'F' : 'C' })
                 }
-                className="px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-white font-mono"
+                className={`px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-white font-mono ${activeRow === extrasRow && extraIndex === 2 ? 'ring-2 ring-white ring-offset-2 ring-offset-black' : ''}`}
                 title="Toggle between Fahrenheit and Celsius"
               >
                 °{settings.tempUnit || 'F'}
@@ -1525,7 +1539,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
                   soundService.playSelect();
                   onOpenLocationModal?.();
                 }}
-                className="px-2 py-0.5 rounded bg-sky-500/20 hover:bg-sky-500/30 text-sky-200 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
+                className={`px-2 py-0.5 rounded bg-sky-500/20 hover:bg-sky-500/30 text-sky-200 hover:text-white flex items-center gap-1 cursor-pointer transition-colors ${activeRow === extrasRow && extraIndex === 3 ? 'ring-2 ring-white ring-offset-2 ring-offset-black' : ''}`}
                 title="Change weather location"
               >
                 <MapPin className="w-3 h-3 text-sky-300" />

@@ -134,3 +134,11 @@ video::-webkit-media-controls-overlay-play-button {
   visibility: hidden !important;
   pointer-events: none !important;
 }
+
+/* D-pad focus highlight for screens using useSpatialNav (outline is suppressed globally above). */
+[data-nav]:focus,
+[data-nav]:focus-visible {
+  box-shadow: 0 0 0 3px #fff, 0 0 0 6px rgba(56, 189, 248, 0.65) !important;
+  position: relative;
+  z-index: 20;
+}

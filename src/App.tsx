@@ -693,10 +693,12 @@ export default function App() {
       )}
 
       {/* Floating Virtual TV Remote Simulator (for desktop/tablet testing) */}
-      <VirtualRemote
-        onToggleFullscreen={toggleFullscreen}
-        isFullscreen={isFullscreen}
-      />
+      {!isTvOrNative && (
+        <VirtualRemote
+          onToggleFullscreen={toggleFullscreen}
+          isFullscreen={isFullscreen}
+        />
+      )}
     </main>
   );
 }

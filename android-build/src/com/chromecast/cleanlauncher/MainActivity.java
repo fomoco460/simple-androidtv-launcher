@@ -22,6 +22,7 @@ import android.util.Base64;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.view.Window;
 import android.view.WindowManager;
 import android.webkit.ConsoleMessage;
@@ -64,6 +65,7 @@ import java.util.Set;
 public class MainActivity extends Activity {
     private static final String TAG = "CleanLauncherTV";
     private WebView webView;
+    private volatile boolean keyboardOpen = false;
     private LocalAssetServer localServer;
     private static final int DEFAULT_PORT = 8989;
     private static final long APP_SCAN_TTL_MS = 60_000L;
@@ -81,6 +83,33 @@ public class MainActivity extends Activity {
 
         public AndroidBridge(Context context) {
             mContext = context;
+        }
+
+        @JavascriptInterface
+        public void showKeyboard() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (webView == null) return;
+                    keyboardOpen = true;
+                    webView.requestFocus();
+                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                    if (imm != null) imm.showSoftInput(webView, InputMethodManager.SHOW_FORCED);
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void hideKeyboard() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    keyboardOpen = false;
+                    if (webView == null) return;
+                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                    if (imm != null) imm.hideSoftInputFromWindow(webView.getWindowToken(), 0);
+                }
+            });
         }
 
         @JavascriptInterface
@@ -1000,6 +1029,11 @@ public class MainActivity extends Activity {
             return true;
         }
 
+        // While the on-screen keyboard is open, the page and keyboard get the keys natively.
+        if (keyboardOpen) {
+            return super.dispatchKeyEvent(event);
+        }
+
         // 3. Handle D-pad and action keys
         if (action == KeyEvent.ACTION_DOWN) {
             String jsKey = null;
@@ -1050,11 +1084,6 @@ public class MainActivity extends Activity {
                     public void run() {
                         if (webView == null) return;
                         String js = "(function() { " +
-                            "var el = document.activeElement; " +
-                            "var tag = el ? el.tagName : ''; " +
-                            "if (tag === 'INPUT' || tag === 'TEXTAREA') { " +
-                            "  if ('" + finalJsKey + "' !== 'ArrowUp' && '" + finalJsKey + "' !== 'ArrowDown') { return; } " +
-                            "} " +
                             "var evt = new KeyboardEvent('keydown', { " +
                             "  key: '" + finalJsKey + "', " +
                             "  code: '" + finalJsCode + "', " +
