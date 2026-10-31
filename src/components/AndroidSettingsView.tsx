@@ -664,14 +664,7 @@ export const AndroidSettingsView: React.FC<AndroidSettingsViewProps> = ({ onBack
 
             {/* Modal Footer */}
             <div className="px-4 py-2 border-t border-white/10 bg-black/40 flex items-center justify-between text-[11px] text-zinc-400">
-              <span className="flex items-center gap-1">
-                <span>Navigate:</span>
-                <kbd className="px-1 py-0.5 rounded bg-white/10 font-mono text-[9px] text-white">▲ / ▼</kbd>
-                <span>Select:</span>
-                <kbd className="px-1 py-0.5 rounded bg-white/10 font-mono text-[9px] text-white">Enter</kbd>
-                <span>Close:</span>
-                <kbd className="px-1 py-0.5 rounded bg-white/10 font-mono text-[9px] text-white">Back / Esc</kbd>
-              </span>
+              <span />
               <button
                 ref={(el) => {
                   modalButtonRefs.current[5] = el;

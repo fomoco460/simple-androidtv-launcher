@@ -1412,27 +1412,7 @@ export const AppBackdropModal: React.FC<AppBackdropModalProps> = ({
           </div>
         </div>
 
-        {/* TV Remote Hint Bar (Fixed at Bottom) */}
-        <div className="px-5 py-2 border-t border-white/10 bg-black/40 flex items-center justify-between text-[11px] text-zinc-400 shrink-0">
-          <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1">
-              <span className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[9px]">◀ / ▶</span>
-              <span>Switch Panels &amp; Tabs</span>
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[9px]">▲ / ▼</span>
-              <span>Navigate Items</span>
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[9px]">OK</span>
-              <span>Select &amp; Apply</span>
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[9px]">BACK</span>
-              <span>Return / Close</span>
-            </span>
-          </div>
-
+        <div className="px-5 py-2 border-t border-white/10 bg-black/40 flex items-center justify-end text-[11px] shrink-0">
           <div className="font-mono text-[10px] text-cyan-400">
             Active: <span className="text-white font-bold">{selectedApp?.name}</span>
           </div>

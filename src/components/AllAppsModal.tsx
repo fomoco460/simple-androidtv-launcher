@@ -54,6 +54,7 @@ export const AllAppsModal: React.FC<AllAppsModalProps> = ({
 
   const [showAddCustom, setShowAddCustom] = useState<boolean>(false);
   const gridRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const gridContainerRef = useRef<HTMLDivElement | null>(null);
   const reorganizeDockRefs = useRef<(HTMLDivElement | null)[]>([]);
   const reorganizeUnpinnedRefs = useRef<(HTMLDivElement | null)[]>([]);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -205,7 +206,13 @@ export const AllAppsModal: React.FC<AllAppsModalProps> = ({
         }
       }
 
-      const gridCols = 5; // standard 5 columns for sleek 4K view
+      // Read the real column count from the rendered grid (it changes with screen width:
+      // 2 / 3 / 4 / 5 columns), so Up/Down always land on the card directly above/below.
+      const gridEl = gridContainerRef.current;
+      const measuredCols = gridEl
+        ? getComputedStyle(gridEl).gridTemplateColumns.split(' ').filter(Boolean).length
+        : 0;
+      const gridCols = measuredCols > 0 ? measuredCols : 4;
 
       // ============================================
       // TAB: BROWSE APPS
@@ -255,8 +262,7 @@ export const AllAppsModal: React.FC<AllAppsModalProps> = ({
             if (gridFocusIndex + gridCols < filteredApps.length) {
               setGridFocusIndex((prev) => prev + gridCols);
             } else {
-              // At bottom of grid: move to footer
-              setFocusZone('footer');
+              // bottom edge: stay on the last row
             }
           }
         } else if (isLeft) {
@@ -378,7 +384,7 @@ export const AllAppsModal: React.FC<AllAppsModalProps> = ({
               setFocusZone('reorganize-unpinned');
               setReorganizeUnpinnedIndex(0);
             } else {
-              setFocusZone('footer');
+              // bottom edge: stay put
             }
           } else if (focusZone === 'reorganize-dock') {
             if (reorganizeDockIndex < dockApps.length - 1) {
@@ -387,13 +393,13 @@ export const AllAppsModal: React.FC<AllAppsModalProps> = ({
               setFocusZone('reorganize-unpinned');
               setReorganizeUnpinnedIndex(0);
             } else {
-              setFocusZone('footer');
+              // bottom edge: stay put
             }
           } else if (focusZone === 'reorganize-unpinned') {
             if (reorganizeUnpinnedIndex + unpinnedCols < unpinnedApps.length) {
               setReorganizeUnpinnedIndex((prev) => prev + unpinnedCols);
             } else {
-              setFocusZone('footer');
+              // bottom edge: stay put
             }
           }
         } else if (isLeft) {
@@ -653,7 +659,7 @@ export const AllAppsModal: React.FC<AllAppsModalProps> = ({
           <>
             {/* Category Filter Pills & Search Bar */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1.5 border-b border-white/5 shrink-0">
-              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar px-2 py-1.5">
                 {categories.map((cat, idx) => {
                   const isCatActive = selectedCategory === cat;
                   const isCatFocused = focusZone === 'categories' && catFocusIndex === idx;
@@ -776,13 +782,13 @@ export const AllAppsModal: React.FC<AllAppsModalProps> = ({
             )}
 
             {/* Apps Grid: Sleek 5 columns, TV-proportioned compact cards */}
-            <div className="flex-1 overflow-y-auto py-2.5 pr-1 no-scrollbar">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-3 scroll-py-4 no-scrollbar">
               {filteredApps.length === 0 ? (
                 <div className="p-8 text-center text-white/40 text-xs">
                   No applications found matching your search.
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-2.5">
+                <div ref={gridContainerRef} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-2.5">
                   {filteredApps.map((app, index) => {
                     const IconComp = BrandIcons[app.iconType] || BrandIcons.generic;
                     const isFocused = focusZone === 'grid' && gridFocusIndex === index;
@@ -805,7 +811,7 @@ export const AllAppsModal: React.FC<AllAppsModalProps> = ({
                         }}
                         className={`group relative flex flex-col justify-between p-2.5 md:p-3 rounded-2xl cursor-pointer transition-all duration-150 border ${
                           isFocused
-                            ? 'bg-white text-slate-900 border-white shadow-[0_0_25px_rgba(255,255,255,0.8)] scale-[1.03] ring-3 ring-white z-10'
+                            ? 'bg-white text-slate-900 border-white shadow-[0_0_18px_rgba(255,255,255,0.7)] ring-3 ring-white z-10'
                             : 'bg-white/[0.04] border-white/5 hover:bg-white/10 text-white'
                         }`}
                       >
@@ -910,9 +916,6 @@ export const AllAppsModal: React.FC<AllAppsModalProps> = ({
                             <Play className="w-3 h-3 fill-current text-emerald-500" />
                             <span>Launch</span>
                           </span>
-                          <span className="text-[10px] opacity-70">
-                            {isFocused ? 'Enter' : ''}
-                          </span>
                         </div>
                       </div>
                     );
@@ -925,7 +928,7 @@ export const AllAppsModal: React.FC<AllAppsModalProps> = ({
           /* ========================================================= */
           /* VIEW 2: REORGANIZE APP TRAY                               */
           /* ========================================================= */
-          <div className="flex-1 overflow-y-auto py-2.5 space-y-4 pr-1 no-scrollbar">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-3 scroll-py-4 space-y-4 no-scrollbar">
             {/* Docked Apps Section */}
             <div>
               <div className="flex items-center justify-between mb-2">
@@ -960,7 +963,7 @@ export const AllAppsModal: React.FC<AllAppsModalProps> = ({
                         }}
                         className={`flex items-center justify-between p-2.5 rounded-xl border transition-all ${
                           isFocused
-                            ? 'bg-white text-slate-900 border-white shadow-lg ring-2 ring-white scale-[1.01] z-10'
+                            ? 'bg-white text-slate-900 border-white shadow-lg ring-2 ring-white z-10'
                             : 'bg-white/5 border-white/10 hover:bg-white/10 text-white'
                         }`}
                       >
@@ -1101,7 +1104,7 @@ export const AllAppsModal: React.FC<AllAppsModalProps> = ({
                         }}
                         className={`flex items-center justify-between p-2 rounded-xl border transition-all cursor-pointer ${
                           isFocused
-                            ? 'bg-white text-slate-900 border-white shadow-md ring-2 ring-white scale-[1.02] z-10'
+                            ? 'bg-white text-slate-900 border-white shadow-md ring-2 ring-white z-10'
                             : 'bg-white/5 border-white/5 hover:bg-white/10 text-white'
                         }`}
                       >
@@ -1138,42 +1141,6 @@ export const AllAppsModal: React.FC<AllAppsModalProps> = ({
             )}
           </div>
         )}
-
-        {/* ========================================================= */}
-        {/* Footer: D-Pad Shortcuts Guide & Done Button                */}
-        {/* ========================================================= */}
-        <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[10px] md:text-[11px] text-white/50 shrink-0">
-          <div className="flex items-center gap-2 text-[10px]">
-            <span>
-              <kbd className="px-1.5 py-0.5 bg-white/10 rounded font-mono text-[9px] text-white">Enter</kbd> Launch
-            </span>
-            <span>·</span>
-            <span>
-              <kbd className="px-1.5 py-0.5 bg-white/10 rounded font-mono text-[9px] text-white">P</kbd> Pin
-            </span>
-            <span>·</span>
-            <span>
-              <kbd className="px-1.5 py-0.5 bg-white/10 rounded font-mono text-[9px] text-white">▲ ▼ ◄ ►</kbd> Navigate
-            </span>
-          </div>
-
-          <button
-            onClick={() => {
-              soundService.playBack();
-              onClose();
-            }}
-            onMouseEnter={() => {
-              setFocusZone('footer');
-            }}
-            className={`px-3.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              focusZone === 'footer'
-                ? 'bg-white text-slate-900 shadow-[0_0_15px_rgba(255,255,255,0.7)] ring-2 ring-white scale-105'
-                : 'bg-white/20 text-white hover:bg-white hover:text-slate-900'
-            }`}
-          >
-            Done
-          </button>
-        </div>
       </div>
     </div>
   );

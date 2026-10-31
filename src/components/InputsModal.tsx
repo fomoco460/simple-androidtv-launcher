@@ -203,11 +203,7 @@ export const InputsModal: React.FC<InputsModalProps> = ({
 
         {/* Modal Footer */}
         <div className="pt-4 border-t border-white/10 flex items-center justify-between text-xs text-white/40">
-          <div className="flex items-center gap-3">
-            <span>Press <kbd className="px-1.5 py-0.5 bg-white/10 rounded font-mono text-[10px] text-white">Enter</kbd> to switch</span>
-            <span>·</span>
-            <span><kbd className="px-1.5 py-0.5 bg-white/10 rounded font-mono text-[10px] text-white">Esc</kbd> to close</span>
-          </div>
+          <span />
           <button
             onClick={() => {
               soundService.playBack();

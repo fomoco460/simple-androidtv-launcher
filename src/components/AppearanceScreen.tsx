@@ -812,7 +812,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
           {activeTab === 'appearance' ? (
             <div
               ref={appearanceListRef}
-              className="flex-1 min-h-0 space-y-0.5 overflow-y-auto pr-1.5 scroll-smooth no-scrollbar"
+              className="flex-1 min-h-0 space-y-1 overflow-y-auto overflow-x-hidden px-1.5 py-1.5 scroll-py-3 scroll-smooth no-scrollbar"
             >
               {rows.map((row, idx) => {
                 const isSelected = activeRow === idx && focusZone === 'content';
@@ -834,7 +834,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
                     }}
                     className={`transition-all duration-150 cursor-pointer rounded-xl ${
                       isSelected
-                        ? 'bg-white text-slate-900 px-3 py-0.5 md:py-1 shadow-lg scale-[1.01] ring-2 ring-white z-10'
+                        ? 'bg-white text-slate-900 px-3 py-0.5 md:py-1 shadow-lg ring-2 ring-white z-10'
                         : 'text-white/80 hover:text-white px-2.5 py-0.5 md:py-1 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10'
                     }`}
                   >
@@ -922,7 +922,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
                 }}
                 className={`mt-0.5 py-1 px-2.5 md:px-3 rounded-xl cursor-pointer transition-all duration-150 border flex items-center justify-between ${
                   activeRow === 5 && focusZone === 'content'
-                    ? 'bg-white text-slate-900 border-white shadow-xl scale-[1.01] ring-2 ring-white z-10'
+                    ? 'bg-white text-slate-900 border-white shadow-xl ring-2 ring-white z-10'
                     : 'bg-white/5 border-white/10 hover:bg-white/10 text-white'
                 }`}
               >
@@ -1004,7 +1004,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
                 }}
                 className={`py-1 px-2.5 md:px-3 rounded-xl cursor-pointer transition-all duration-150 border flex items-center justify-between ${
                   activeRow === 6 && focusZone === 'content'
-                    ? 'bg-white text-slate-900 border-white shadow-xl scale-[1.01] ring-2 ring-white z-10'
+                    ? 'bg-white text-slate-900 border-white shadow-xl ring-2 ring-white z-10'
                     : 'bg-white/5 border-white/10 hover:bg-white/10 text-white'
                 }`}
               >
@@ -1058,7 +1058,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
                 }}
                 className={`py-1 px-2.5 md:px-3 rounded-xl cursor-pointer transition-all duration-150 border flex items-center justify-between ${
                   activeRow === 7 && focusZone === 'content'
-                    ? 'bg-white text-slate-900 border-white shadow-xl scale-[1.01] ring-2 ring-white z-10'
+                    ? 'bg-white text-slate-900 border-white shadow-xl ring-2 ring-white z-10'
                     : 'bg-white/5 border-white/10 hover:bg-white/10 text-white'
                 }`}
               >
@@ -1132,7 +1132,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
                 }}
                 className={`py-1 px-2.5 md:px-3 rounded-xl cursor-pointer transition-all duration-150 border flex items-center justify-between ${
                   activeRow === 8 && focusZone === 'content'
-                    ? 'bg-white text-slate-900 border-white shadow-xl scale-[1.01] ring-2 ring-white z-10'
+                    ? 'bg-white text-slate-900 border-white shadow-xl ring-2 ring-white z-10'
                     : 'bg-white/5 border-white/10 hover:bg-white/10 text-white'
                 }`}
               >
@@ -1178,7 +1178,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
                   }}
                   className={`py-1.5 px-3 rounded-xl cursor-pointer transition-all duration-200 border flex items-center justify-between ${
                     activeRow === 9 && focusZone === 'content'
-                      ? 'bg-white text-slate-900 border-white shadow-xl scale-[1.01] ring-2 ring-white z-10'
+                      ? 'bg-white text-slate-900 border-white shadow-xl ring-2 ring-white z-10'
                       : 'bg-white/5 border-white/10 hover:bg-white/10 text-white'
                   }`}
                 >
@@ -1274,7 +1274,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
                         }}
                         className={`flex items-center justify-between p-3 rounded-2xl border transition-all duration-200 ${
                           isAppFocused
-                            ? 'bg-white text-slate-900 border-white shadow-2xl scale-[1.02] ring-2 ring-sky-400 z-10'
+                            ? 'bg-white text-slate-900 border-white shadow-2xl ring-2 ring-sky-400 z-10'
                             : 'bg-white/5 border-white/10 hover:bg-white/10 text-white'
                         }`}
                       >
@@ -1397,7 +1397,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
                           }}
                           className={`flex items-center justify-between p-2.5 rounded-xl border text-xs cursor-pointer transition-all text-left ${
                             isUnpinnedFocused
-                              ? 'bg-white text-slate-900 border-white shadow-2xl scale-[1.04] ring-2 ring-white/95 z-20 font-bold'
+                              ? 'bg-white text-slate-900 border-white shadow-2xl ring-2 ring-white/95 z-20 font-bold'
                               : 'bg-white/5 hover:bg-white/15 border-white/10 text-white'
                           }`}
                         >
@@ -1537,30 +1537,6 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
           </div>
         </div>
       </div>
-
-      {/* Bottom Remote Control Action Hints (matching screenshot: "< > Change  Back  Home") */}
-      <footer className="relative z-10 w-full max-w-7xl mx-auto flex items-center justify-between pt-2 border-t border-white/10 text-xs text-white/50 shrink-0">
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2">
-            <span className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[10px]">
-              &lt; &gt;
-            </span>
-            <span>Change</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[10px]">
-              Esc / Back
-            </span>
-            <span>Back</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[10px]">
-              H
-            </span>
-            <span>Home</span>
-          </div>
-        </div>
-      </footer>
 
       {/* CleanFrame & Ambient Wallpaper Gallery Modal */}
       {showLocalGalleryModal && (
