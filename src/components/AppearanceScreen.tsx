@@ -633,13 +633,6 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
   // Home row is edited live, so its list needs a stable key per app; other categories reset on switch.
   const previewIsAmbient = category === 'ambient' || category === 'night';
 
-  if (showAndroid) {
-    return (
-      <div className="relative w-full h-full bg-[#070b12] text-white overflow-hidden p-6 md:p-10">
-        <AndroidSettingsView onBack={() => setShowAndroid(false)} />
-      </div>
-    );
-  }
   const note = noteFor();
 
   return (
@@ -740,6 +733,12 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
       </div>
     </div>
     </Stage>
+
+      {showAndroid && (
+        <div className="fixed inset-0 z-40 bg-[#070b12] text-white overflow-hidden px-10 py-8">
+          <AndroidSettingsView onBack={() => setShowAndroid(false)} />
+        </div>
+      )}
 
       {picker && (
         <AmbientPhotoPicker

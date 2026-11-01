@@ -228,7 +228,19 @@ export function useSpatialNav({
     };
 
     // Capture phase + stopImmediatePropagation: this screen owns the keys while it is open.
-    const removeOwner = pushKeyOwner((e) => handler(e as KeyboardEvent), ['keydown']);
+    // The Android side sends Back as a 'chromecast-back-press' event plus an Escape key press. The key
+    // press does the work; the extra event is swallowed so the app-level Back handler (which would
+    // jump straight to Home) never sees it while this screen is open.
+    const removeOwner = pushKeyOwner(
+      (e) => {
+        if (e.type === 'chromecast-back-press') {
+          e.stopImmediatePropagation();
+          return;
+        }
+        handler(e as KeyboardEvent);
+      },
+      ['keydown', 'chromecast-back-press'],
+    );
     return () => {
       removeOwner();
       // Never leave the on-screen keyboard (and its key capture) behind when a screen closes.

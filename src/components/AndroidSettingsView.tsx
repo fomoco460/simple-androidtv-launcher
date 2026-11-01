@@ -1,3 +1,4 @@
+import { pushKeyOwner } from '../services/keyGate';
 import React, { useState, useEffect, useRef } from 'react';
 import { soundService } from '../services/sound';
 import {
@@ -207,6 +208,31 @@ export const AndroidSettingsView: React.FC<AndroidSettingsViewProps> = ({ onBack
     }
   };
 
+  // Back closes the open dialog, or goes one page back. It never jumps to Home: the Android side sends
+  // Back as a 'chromecast-back-press' event plus an Escape key press, and the first one is swallowed here.
+  const onBackRef = useRef(onBack);
+  onBackRef.current = onBack;
+  useEffect(() => {
+    return pushKeyOwner(
+      (e) => {
+        if (e.type === 'chromecast-back-press') {
+          e.stopImmediatePropagation();
+          return;
+        }
+        const k = e as KeyboardEvent;
+        if (k.key === 'Escape' || k.key === 'Back' || k.key === 'GoBack' || k.keyCode === 27 || k.keyCode === 4) {
+          k.preventDefault();
+          k.stopImmediatePropagation();
+          soundService.playBack();
+          if (showInterceptorModal) setShowInterceptorModal(false);
+          else onBackRef.current?.();
+        }
+        // any other key carries on to the list below
+      },
+      ['keydown', 'chromecast-back-press'],
+    );
+  }, [showInterceptorModal]);
+
   // Keyboard remote navigation for main settings list
   useEffect(() => {
     if (showInterceptorModal) return;
@@ -370,7 +396,7 @@ export const AndroidSettingsView: React.FC<AndroidSettingsViewProps> = ({ onBack
       </div>
 
       {/* List of Android Settings */}
-      <div className="space-y-1.5 max-h-[64vh] overflow-y-auto pr-1">
+      <div className="space-y-1.5 max-h-[calc(100vh-7rem)] overflow-y-auto pr-1">
         {ANDROID_SETTINGS_LIST.map((item, idx) => {
           const isSelected = selectedIndex === idx;
 
