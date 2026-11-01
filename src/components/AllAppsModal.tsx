@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { AppItem, LauncherSettings } from '../types';
-import { BrandIcons, AppIcon } from './BrandIcons';
+import { AppIcon } from './BrandIcons';
 import { soundService } from '../services/sound';
 import { getAppBackdrop } from '../services/backdropGenerator';
 import {
@@ -811,7 +811,6 @@ export const AllAppsModal: React.FC<AllAppsModalProps> = ({
               ) : (
                 <div ref={gridContainerRef} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-2.5">
                   {filteredApps.map((app, index) => {
-                    const IconComp = BrandIcons[app.iconType] || BrandIcons.generic;
                     const isFocused = focusZone === 'grid' && gridFocusIndex === index;
 
                     return (
@@ -968,7 +967,6 @@ export const AllAppsModal: React.FC<AllAppsModalProps> = ({
               ) : (
                 <div className="space-y-1.5">
                   {dockApps.map((app, idx) => {
-                    const IconComp = BrandIcons[app.iconType] || BrandIcons.generic;
                     const isFocused =
                       focusZone === 'reorganize-dock' && reorganizeDockIndex === idx;
 
@@ -1107,7 +1105,6 @@ export const AllAppsModal: React.FC<AllAppsModalProps> = ({
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   {unpinnedApps.map((app, idx) => {
-                    const IconComp = BrandIcons[app.iconType] || BrandIcons.generic;
                     const isFocused =
                       focusZone === 'reorganize-unpinned' && reorganizeUnpinnedIndex === idx;
 

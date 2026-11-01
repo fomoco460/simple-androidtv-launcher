@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { BackgroundPreset, LauncherSettings } from '../types';
+import React, { useState, useRef } from 'react';
+import { BackgroundPreset } from '../types';
 import { soundService } from '../services/sound';
 import { useSpatialNav } from '../hooks/useSpatialNav';
-import { CLEAN_FRAME_WALLPAPERS, CleanFrameWallpaper } from '../data/cleanFrameWallpapers';
+import { CLEAN_FRAME_WALLPAPERS } from '../data/cleanFrameWallpapers';
 import {
   Image as ImageIcon,
   Sparkles,

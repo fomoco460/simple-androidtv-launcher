@@ -2,17 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   LauncherSettings,
   BackgroundPreset,
-  LayoutPreset,
   AppsDisplayPreset,
   FontPreset,
-  FocusPreset,
   HomeControlsPreset,
-  UiScalePreset,
   AppItem,
 } from '../types';
 import { HomeLauncher } from './HomeLauncher';
 import { AndroidSettingsView } from './AndroidSettingsView';
-import { BrandIcons, AppIcon } from './BrandIcons';
+import { AppIcon } from './BrandIcons';
 import { soundService } from '../services/sound';
 import { CLEAN_FRAME_WALLPAPERS } from '../data/cleanFrameWallpapers';
 import { WallpaperGalleryModal } from './WallpaperGalleryModal';
@@ -26,13 +23,8 @@ import {
   ArrowLeftRight,
   Pin,
   PinOff,
-  Check,
-  ChevronUp,
-  ChevronDown,
   Download,
   Sparkles,
-  Image as ImageIcon,
-  Layers,
 } from 'lucide-react';
 
 interface AppearanceScreenProps {
@@ -101,16 +93,6 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
     { id: 'text', label: 'Text' },
     { id: 'icons', label: 'Icons' },
     { id: 'both', label: 'Icons and text' },
-  ];
-
-  const uiScaleOptions: { id: UiScalePreset; label: string }[] = [
-    { id: 'auto', label: 'Auto (Sleek TV - 85%)' },
-    { id: '75', label: 'Ultra Compact (75%)' },
-    { id: '80', label: 'Very Compact (80%)' },
-    { id: '85', label: 'Compact (85%)' },
-    { id: '90', label: 'Refined (90%)' },
-    { id: '100', label: 'Standard (100%)' },
-    { id: '110', label: 'Medium (110%)' },
   ];
 
   // Helper to cycle through array

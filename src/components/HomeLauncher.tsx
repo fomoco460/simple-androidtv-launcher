@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { LauncherSettings, AppItem } from '../types';
-import { BrandIcons, AppIcon } from './BrandIcons';
+import { AppIcon } from './BrandIcons';
 import { BackgroundView } from './BackgroundView';
 import { getAppBackdrop } from '../services/backdropGenerator';
 import { soundService } from '../services/sound';
 import { weatherService, WeatherData } from '../services/weather';
 import {
-  Tv,
   Grid,
   Settings as SettingsIcon,
   Sun,
@@ -22,7 +21,7 @@ import {
 interface HomeLauncherProps {
   settings: LauncherSettings;
   apps: AppItem[];
-  onOpenView: (view: 'inputs' | 'all-apps' | 'appearance' | 'install-apk' | 'location') => void;
+  onOpenView: (view: 'all-apps' | 'appearance' | 'install-apk' | 'location') => void;
   onLaunchApp: (app: AppItem) => void;
   onAppMenu?: (app: AppItem) => void;
   isMiniPreview?: boolean;
@@ -187,15 +186,11 @@ export const HomeLauncher: React.FC<HomeLauncherProps> = ({
     (!!(window as any).AndroidBridge?.isNative?.() ||
       /Android|AFT|GoogleTV|SmartTV|AppleTV|HbbTV|CrKey/i.test(navigator.userAgent));
 
-  const showInputs = !!settings.showInputs;
   const topNavItems: Array<{
-    id: 'inputs' | 'all-apps' | 'install-apk' | 'appearance';
+    id: 'all-apps' | 'install-apk' | 'appearance';
     label: string;
     icon: React.ReactNode;
   }> = [
-    ...(showInputs
-      ? [{ id: 'inputs' as const, label: 'Inputs', icon: <Tv className="w-4 h-4" /> }]
-      : []),
     { id: 'all-apps' as const, label: 'All apps', icon: <Grid className="w-4 h-4" /> },
     ...(!isTvOrNative
       ? [{ id: 'install-apk' as const, label: 'Install APK', icon: <Download className="w-4 h-4" /> }]
@@ -302,10 +297,6 @@ export const HomeLauncher: React.FC<HomeLauncherProps> = ({
             onOpenView(selectedNav.id);
           }
         }
-      } else if (e.key.toLowerCase() === 'i' && showInputs) {
-        e.preventDefault();
-        soundService.playSelect();
-        onOpenView('inputs');
       } else if (e.key.toLowerCase() === 'a') {
         e.preventDefault();
         soundService.playSelect();
@@ -326,7 +317,6 @@ export const HomeLauncher: React.FC<HomeLauncherProps> = ({
     focusedTopIndex,
     dockApps,
     topNavItems,
-    showInputs,
     onLaunchApp,
     onOpenView,
   ]);
@@ -344,7 +334,7 @@ export const HomeLauncher: React.FC<HomeLauncherProps> = ({
 
   // Style class getters based on user settings
   const materialClass = 'material-soft';
-  const focusClass = `focus-${settings.focus}`;
+  const focusClass = 'focus-border';
 
   // Safe zone overscan margin calculation for TV
   // Standard TV safe zone is 5% (~60-80px on 1080p, 120-160px on 4K) to prevent bezel clipping
@@ -526,17 +516,7 @@ export const HomeLauncher: React.FC<HomeLauncherProps> = ({
           </nav>
         </header>
 
-        {/* Center space (can show currently focused title in minimal layout) */}
-        <div className="flex-1 flex items-center justify-center pointer-events-none">
-          {settings.layout === 'minimal' && !isMiniPreview && (
-            <div className="text-center opacity-80">
-              <span className="text-xs uppercase tracking-widest text-white/50">Playing on Chromecast</span>
-              <h2 className="text-2xl font-light text-white tracking-wide mt-1">
-                {dockApps[focusedDockIndex]?.name || 'Chromecast 4K'}
-              </h2>
-            </div>
-          )}
-        </div>
+        <div className="flex-1" />
 
         {/* Bottom Section: The Floating Frosted Glass Dock with Smooth Horizontal Scroll */}
         <div className="w-full flex flex-col items-center pb-2 md:pb-4 max-w-full overflow-hidden">
@@ -561,7 +541,6 @@ export const HomeLauncher: React.FC<HomeLauncherProps> = ({
               }
             >
               {dockApps.map((app, index) => {
-                const IconComponent = BrandIcons[app.iconType] || BrandIcons.generic;
                 const isFocused =
                   focusArea === 'dock' && focusedDockIndex === index && !isMiniPreview;
 

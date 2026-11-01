@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { LauncherSettings, AppItem, TvInputItem, BackgroundPreset } from './types';
-import { INITIAL_APPS, INITIAL_INPUTS } from './data/defaultApps';
+import { LauncherSettings, AppItem, BackgroundPreset } from './types';
+import { INITIAL_APPS } from './data/defaultApps';
 import { HomeLauncher } from './components/HomeLauncher';
 import { AppearanceScreen } from './components/AppearanceScreen';
-import { InputsModal } from './components/InputsModal';
 import { AllAppsModal } from './components/AllAppsModal';
 import { AppLauncherModal } from './components/AppLauncherModal';
 import { LocationModal } from './components/LocationModal';
@@ -11,14 +10,12 @@ import { InstallApkModal } from './components/InstallApkModal';
 import { WallpaperGalleryModal } from './components/WallpaperGalleryModal';
 import { AppContextMenu, AppMenuContext } from './components/AppContextMenu';
 import { AppBackdropModal } from './components/AppBackdropModal';
-import { VirtualRemote } from './components/VirtualRemote';
 import { soundService } from './services/sound';
 import { getAppBackdrop } from './services/backdropGenerator';
 import { UiScalePreset } from './types';
 
 const STORAGE_KEY_SETTINGS = 'chromecast_launcher_settings_v1';
 const STORAGE_KEY_APPS = 'chromecast_launcher_apps_v1';
-const STORAGE_KEY_INPUTS = 'chromecast_launcher_inputs_v1';
 
 export function getComputedUiScale(_preset?: UiScalePreset): number {
   return 1.0;
@@ -28,17 +25,14 @@ const DEFAULT_SETTINGS: LauncherSettings = {
   background: 'desert-stars',
   customBgUrl: '',
   iconStyle: 'stock',
-  layout: 'dock',
   apps: 'icons-only', // Default to clean icons only in dock
   font: 'Manrope',
-  focus: 'border',
   homeControls: 'both',
   uiScale: 'auto',
   safeZone: 5,
   soundEffects: true,
   clockFormat: 'auto',
   showDate: false,
-  showInputs: false,
   showWeather: true,
   tempUnit: 'F',
   activeView: 'home',
@@ -56,8 +50,6 @@ export default function App() {
           ...parsed,
           clockFormat: parsed.clockFormat || 'auto',
           iconStyle: 'stock', // locked to stock app icons
-          layout: 'dock',     // locked to dock
-          focus: 'border',    // locked to border
           apps: parsed.apps || 'icons-only', // Preserve user's dock setting (icons-only)
           uiScale: parsed.uiScale || 'auto',
           dynamicAppBackgrounds: false, // Clean background without giant logos
@@ -145,22 +137,13 @@ export default function App() {
     return INITIAL_APPS;
   });
 
-  const [inputs, setInputs] = useState<TvInputItem[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_INPUTS);
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return INITIAL_INPUTS;
-  });
-
-  const [activeModal, setActiveModal] = useState<'inputs' | 'all-apps' | null>(null);
+  const [activeModal, setActiveModal] = useState<'all-apps' | null>(null);
   const [showLocationModal, setShowLocationModal] = useState<boolean>(false);
   const [showApkModal, setShowApkModal] = useState<boolean>(false);
   const [showWallpaperGallery, setShowWallpaperGallery] = useState<boolean>(false);
   const [showBackdropModal, setShowBackdropModal] = useState<boolean>(false);
   const [backdropModalAppId, setBackdropModalAppId] = useState<string | undefined>(undefined);
   const [launchingApp, setLaunchingApp] = useState<AppItem | null>(null);
-  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
   const handleSaveLocation = (
     city: string,
@@ -271,30 +254,6 @@ export default function App() {
       localStorage.setItem(STORAGE_KEY_APPS, JSON.stringify(apps));
     } catch {}
   }, [apps]);
-
-  // Sync inputs with localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_INPUTS, JSON.stringify(inputs));
-    } catch {}
-  }, [inputs]);
-
-  // Track fullscreen state changes
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, []);
-
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
-    } else {
-      document.exitFullscreen().catch(() => {});
-    }
-  };
 
   const isTvOrNative =
     typeof window !== 'undefined' &&
@@ -432,7 +391,7 @@ export default function App() {
   };
 
   const handleOpenView = (
-    view: 'inputs' | 'all-apps' | 'appearance' | 'install-apk' | 'location'
+    view: 'all-apps' | 'appearance' | 'install-apk' | 'location'
   ) => {
     if (view === 'appearance') {
       syncInstalledApps();
@@ -559,22 +518,6 @@ export default function App() {
     setApps((prev) => [newApp, ...prev]);
   };
 
-  const handleSelectInput = (inputId: string) => {
-    setInputs((prev) =>
-      prev.map((item) => ({
-        ...item,
-        isActive: item.id === inputId,
-      }))
-    );
-    setActiveModal(null);
-  };
-
-  const handleUpdateInputLabel = (inputId: string, label: string) => {
-    setInputs((prev) =>
-      prev.map((item) => (item.id === inputId ? { ...item, label } : item))
-    );
-  };
-
   const isAnyModalActive =
     showLocationModal ||
     showApkModal ||
@@ -626,15 +569,6 @@ export default function App() {
       )}
 
       {/* Modals & Overlays on Home */}
-      {activeModal === 'inputs' && (
-        <InputsModal
-          inputs={inputs}
-          onSelectInput={handleSelectInput}
-          onUpdateInputLabel={handleUpdateInputLabel}
-          onClose={() => setActiveModal(null)}
-        />
-      )}
-
       {activeModal === 'all-apps' && (
         <AllAppsModal
           apps={apps}
@@ -734,13 +668,6 @@ export default function App() {
         );
       })()}
 
-      {/* Floating Virtual TV Remote Simulator (for desktop/tablet testing) */}
-      {!isTvOrNative && (
-        <VirtualRemote
-          onToggleFullscreen={toggleFullscreen}
-          isFullscreen={isFullscreen}
-        />
-      )}
     </main>
   );
 }

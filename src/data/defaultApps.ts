@@ -1,4 +1,4 @@
-import { AppItem, TvInputItem } from '../types';
+import { AppItem } from '../types';
 
 export const INITIAL_APPS: AppItem[] = [
   {
@@ -166,13 +166,4 @@ export const INITIAL_APPS: AppItem[] = [
     category: 'utility',
     description: 'Wi-Fi, Bluetooth, Accounts, Display & System Preferences',
   },
-];
-
-export const INITIAL_INPUTS: TvInputItem[] = [
-  { id: 'hdmi1', name: 'HDMI 1', label: 'Chromecast 4K (Current)', type: 'hdmi', isActive: true },
-  { id: 'hdmi2', name: 'HDMI 2', label: 'Soundbar (eARC / Atmos)', type: 'earc', isActive: false },
-  { id: 'hdmi3', name: 'HDMI 3', label: 'PlayStation 5 / Console', type: 'hdmi', isActive: false },
-  { id: 'hdmi4', name: 'HDMI 4', label: 'Nintendo Switch / PC', type: 'hdmi', isActive: false },
-  { id: 'cast', name: 'Google Cast', label: 'Ready to receive cast stream', type: 'cast', isActive: false },
-  { id: 'tuner', name: 'Antenna / TV', label: 'Over-The-Air Digital Channels', type: 'tuner', isActive: false },
 ];

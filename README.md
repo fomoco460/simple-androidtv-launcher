@@ -67,5 +67,5 @@ The version comes from `package.json`. Upload the resulting APK to a GitHub Rele
 
 ## Notes
 * The launcher shows each app's own icon taken from the device. Third-party brand artwork is not bundled.
-* Settings (dock, wallpaper, etc.) are stored in the WebView's local storage. Uninstalling the app erases them.
+* Settings (app row, wallpaper, etc.) are stored in the WebView's local storage. Uninstalling the app erases them.
 * Licensed under the MIT License (see `LICENSE`).

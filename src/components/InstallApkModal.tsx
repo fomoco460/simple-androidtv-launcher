@@ -4,7 +4,6 @@ import {
   Tv,
   Check,
   Copy,
-  ExternalLink,
   Smartphone,
   Terminal,
   ShieldCheck,
@@ -217,7 +216,7 @@ export const InstallApkModal: React.FC<InstallApkModalProps> = ({ onClose }) => 
                   <span className="text-[10px] font-semibold text-emerald-400/80 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">Production Ready</span>
                 </div>
                 <div className="text-[11px] text-zinc-300">
-                  Stock app icons · Pure Dock layout · Crisp white Border focus · Persistent Home interceptor surviving reboots
+                  Stock app icons · Scrolling app row · Crisp white Border focus · Persistent Home interceptor surviving reboots
                 </div>
               </div>
             </div>

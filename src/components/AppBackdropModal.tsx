@@ -20,11 +20,7 @@ import {
   Download,
   Film,
   Tv,
-  Layers,
-  ChevronLeft,
   ChevronRight,
-  ChevronUp,
-  ChevronDown,
 } from 'lucide-react';
 
 interface AppBackdropModalProps {
