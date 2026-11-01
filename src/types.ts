@@ -1,3 +1,4 @@
+import type { SoundTheme, SoundVolume } from './services/sound';
 export type CleanFramePresetId =
   | 'cf-misty'
   | 'cf-cove'
@@ -30,7 +31,7 @@ export type AppsDisplayPreset = 'icons-and-text' | 'icons-only' | 'text-only';
 
 export type IconStylePreset = 'stock' | 'minimal';
 
-export type FontPreset = 'Manrope' | 'Outfit' | 'Plus Jakarta Sans' | 'System';
+export type FontPreset = 'Manrope' | 'Outfit' | 'Plus Jakarta Sans' | 'Robotech GP' | 'System';
 
 
 
@@ -57,8 +58,8 @@ export interface LauncherSettings {
   font: FontPreset;
   homeControls: HomeControlsPreset;
   uiScale?: UiScalePreset; // TV 10-foot scale for 4K TV / living room viewing distance
-  safeZone: number; // 0, 3, 5% TV overscan
-  soundEffects: boolean;
+  soundTheme: SoundTheme;
+  soundVolume: SoundVolume;
   clockFormat?: 'auto' | '12h' | '24h';
   showDate: boolean;
   showWeather?: boolean;

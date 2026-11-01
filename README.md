@@ -69,3 +69,7 @@ The version comes from `package.json`. Upload the resulting APK to a GitHub Rele
 * The launcher shows each app's own icon taken from the device. Third-party brand artwork is not bundled.
 * Settings (app row, wallpaper, etc.) are stored in the WebView's local storage. Uninstalling the app erases them.
 * Licensed under the MIT License (see `LICENSE`).
+
+## Credits
+
+* **ROBOTECH GP** font by Gustavo Paz L., licensed under [CC BY-SA 4.0](http://creativecommons.org/licenses/by-sa/4.0/). See `public/fonts/ROBOTECH-GP-LICENSE.txt`.

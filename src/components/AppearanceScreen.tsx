@@ -10,7 +10,13 @@ import {
 import { HomeLauncher } from './HomeLauncher';
 import { AndroidSettingsView } from './AndroidSettingsView';
 import { AppIcon } from './BrandIcons';
-import { soundService } from '../services/sound';
+import {
+  soundService,
+  SOUND_THEMES,
+  SOUND_VOLUMES,
+  SoundTheme,
+  SoundVolume,
+} from '../services/sound';
 import { CLEAN_FRAME_WALLPAPERS } from '../data/cleanFrameWallpapers';
 import { WallpaperGalleryModal } from './WallpaperGalleryModal';
 import { AppBackdropModal } from './AppBackdropModal';
@@ -86,6 +92,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
     { id: 'Manrope', label: 'Manrope' },
     { id: 'Outfit', label: 'Outfit' },
     { id: 'Plus Jakarta Sans', label: 'Plus Jakarta Sans' },
+    { id: 'Robotech GP', label: 'Robotech GP' },
     { id: 'System', label: 'System' },
   ];
 
@@ -96,6 +103,17 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
   ];
 
   // Helper to cycle through array
+  const cycleSound = (which: 'theme' | 'volume') => {
+    const list = which === 'theme' ? SOUND_THEMES : SOUND_VOLUMES;
+    const current = which === 'theme' ? settings.soundTheme : settings.soundVolume;
+    const idx = list.findIndex((o) => o.id === current);
+    const next = list[(idx + 1) % list.length].id;
+    const theme = which === 'theme' ? (next as SoundTheme) : settings.soundTheme;
+    const volume = which === 'volume' ? (next as SoundVolume) : settings.soundVolume;
+    onUpdateSettings(which === 'theme' ? { soundTheme: theme } : { soundVolume: volume });
+    soundService.preview(theme, volume);
+  };
+
   const cycleOption = (direction: 'next' | 'prev', rowIndex: number) => {
     soundService.playMove();
     if (rowIndex === 0) {
@@ -139,7 +157,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
   const [focusZone, setFocusZone] = useState<'header' | 'content'>('content');
   const [headerIndex, setHeaderIndex] = useState<number>(1); // 0: Home, 1: Appearance, 2: Organize, 3: Android
   const [activeRow, setActiveRow] = useState<number>(0);
-  const [extraIndex, setExtraIndex] = useState<number>(0); // 0 sound, 1 safe-zone, 2 temp unit, 3 location
+  const [extraIndex, setExtraIndex] = useState<number>(0); // 0 sound, 1 volume, 2 temp unit, 3 location
   const [organizeZone, setOrganizeZone] = useState<'dock' | 'unpinned'>('dock');
   const [organizeDockIndex, setOrganizeDockIndex] = useState<number>(0);
   const [organizeUnpinnedIndex, setOrganizeUnpinnedIndex] = useState<number>(0);
@@ -531,12 +549,9 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
         } else {
           soundService.playSelect();
           if (extraIndex === 0) {
-            onUpdateSettings({ soundEffects: !settings.soundEffects });
-            soundService.enabled = !settings.soundEffects;
+            cycleSound('theme');
           } else if (extraIndex === 1) {
-            onUpdateSettings({
-              safeZone: settings.safeZone === 0 ? 3 : settings.safeZone === 3 ? 5 : 0,
-            });
+            cycleSound('volume');
           } else if (extraIndex === 2) {
             onUpdateSettings({ tempUnit: settings.tempUnit === 'C' ? 'F' : 'C' });
           } else {
@@ -1455,34 +1470,24 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
             })()}
           </div>
 
-          {/* Quick TV Configuration Extras (Overscan, Sound, Weather) */}
+          {/* Quick TV settings: Sound, Weather */}
           <div className="mt-2.5 flex flex-wrap items-center justify-center gap-3 text-xs text-white/60">
-            <label className={`flex items-center gap-2 cursor-pointer hover:text-white rounded px-1.5 py-0.5 ${activeRow === extrasRow && extraIndex === 0 ? 'ring-2 ring-white ring-offset-2 ring-offset-black' : ''}`}>
-              <input
-                type="checkbox"
-                checked={settings.soundEffects}
-                onChange={(e) => {
-                  onUpdateSettings({ soundEffects: e.target.checked });
-                  soundService.enabled = e.target.checked;
-                }}
-                className="rounded accent-white"
-              />
-              <span>Remote sound effects</span>
-            </label>
-            <span className="text-white/20">·</span>
             <div className="flex items-center gap-2">
-              <span>Safe-zone padding:</span>
+              <span>Sound:</span>
               <button
-                onClick={() =>
-                  onUpdateSettings({
-                    safeZone:
-                      settings.safeZone === 0 ? 3 : settings.safeZone === 3 ? 5 : 0,
-                  })
-                }
-                className={`px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-white font-mono ${activeRow === extrasRow && extraIndex === 1 ? 'ring-2 ring-white ring-offset-2 ring-offset-black' : ''}`}
+                onClick={() => cycleSound('theme')}
+                className={`px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-white ${activeRow === extrasRow && extraIndex === 0 ? 'ring-2 ring-white ring-offset-2 ring-offset-black' : ''}`}
               >
-                {settings.safeZone}%
+                {SOUND_THEMES.find((o) => o.id === settings.soundTheme)?.label}
               </button>
+              {settings.soundTheme !== 'off' && (
+                <button
+                  onClick={() => cycleSound('volume')}
+                  className={`px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-white ${activeRow === extrasRow && extraIndex === 1 ? 'ring-2 ring-white ring-offset-2 ring-offset-black' : ''}`}
+                >
+                  {SOUND_VOLUMES.find((o) => o.id === settings.soundVolume)?.label}
+                </button>
+              )}
             </div>
             <span className="text-white/20">·</span>
             <div className="flex items-center gap-2">

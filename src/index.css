@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/* Robotech GP by Gustavo Paz L. - CC BY-SA 4.0 (see public/fonts/ROBOTECH-GP-LICENSE.txt) */
+@font-face {
+  font-family: 'Robotech GP';
+  src: url('/fonts/ROBOTECH-GP.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 @layer base {
   :root {
     --font-family-current: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;

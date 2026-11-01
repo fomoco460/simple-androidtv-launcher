@@ -336,15 +336,8 @@ export const HomeLauncher: React.FC<HomeLauncherProps> = ({
   const materialClass = 'material-soft';
   const focusClass = 'focus-border';
 
-  // Safe zone overscan margin calculation for TV
-  // Standard TV safe zone is 5% (~60-80px on 1080p, 120-160px on 4K) to prevent bezel clipping
-  const safeZonePadding = isMiniPreview
-    ? 'p-4'
-    : settings.safeZone === 0
-    ? 'px-6 py-4 md:px-10 md:py-6'
-    : settings.safeZone === 3
-    ? 'px-8 py-5 md:px-12 md:py-7'
-    : 'px-10 py-6 md:px-16 md:py-8';
+  // Fixed TV safe-area margin so content never touches the screen edges
+  const safeZonePadding = isMiniPreview ? 'p-4' : 'px-10 py-6 md:px-16 md:py-8';
 
   // Helper to render weather icon
   const getWeatherIcon = (type?: string, isMini?: boolean) => {

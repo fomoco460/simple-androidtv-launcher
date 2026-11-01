@@ -29,8 +29,8 @@ const DEFAULT_SETTINGS: LauncherSettings = {
   font: 'Manrope',
   homeControls: 'both',
   uiScale: 'auto',
-  safeZone: 5,
-  soundEffects: true,
+  soundTheme: 'click',
+  soundVolume: 'medium',
   clockFormat: 'auto',
   showDate: false,
   showWeather: true,
@@ -49,6 +49,8 @@ export default function App() {
           ...DEFAULT_SETTINGS,
           ...parsed,
           clockFormat: parsed.clockFormat || 'auto',
+          soundTheme: parsed.soundTheme ?? (parsed.soundEffects === false ? 'off' : 'click'),
+          soundVolume: parsed.soundVolume ?? 'medium',
           iconStyle: 'stock', // locked to stock app icons
           apps: parsed.apps || 'icons-only', // Preserve user's dock setting (icons-only)
           uiScale: parsed.uiScale || 'auto',
@@ -238,7 +240,7 @@ export default function App() {
       localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(settings));
     } catch {}
 
-    soundService.enabled = settings.soundEffects;
+    soundService.configure(settings.soundTheme, settings.soundVolume);
 
     // Dynamically apply selected font to root
     const fontName =
