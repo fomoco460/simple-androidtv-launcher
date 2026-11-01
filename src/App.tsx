@@ -32,7 +32,6 @@ const DEFAULT_SETTINGS: LauncherSettings = {
   apps: 'icons-only', // Default to clean icons only in dock
   font: 'Manrope',
   focus: 'border',
-  material: 'soft',
   homeControls: 'both',
   uiScale: 'auto',
   safeZone: 5,

@@ -6,7 +6,6 @@ import {
   AppsDisplayPreset,
   FontPreset,
   FocusPreset,
-  MaterialPreset,
   HomeControlsPreset,
   UiScalePreset,
   AppItem,
@@ -98,13 +97,6 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
     { id: 'System', label: 'System' },
   ];
 
-  const materialOptions: { id: MaterialPreset; label: string }[] = [
-    { id: 'soft', label: 'Soft' },
-    { id: 'frosted', label: 'Frosted' },
-    { id: 'clear', label: 'Clear' },
-    { id: 'solid', label: 'Solid' },
-  ];
-
   const homeControlsOptions: { id: HomeControlsPreset; label: string }[] = [
     { id: 'text', label: 'Text' },
     { id: 'icons', label: 'Icons' },
@@ -146,23 +138,16 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
           : (idx - 1 + fontOptions.length) % fontOptions.length;
       onUpdateSettings({ font: fontOptions[nextIdx].id });
     } else if (rowIndex === 3) {
-      const idx = materialOptions.findIndex((o) => o.id === settings.material);
-      const nextIdx =
-        direction === 'next'
-          ? (idx + 1) % materialOptions.length
-          : (idx - 1 + materialOptions.length) % materialOptions.length;
-      onUpdateSettings({ material: materialOptions[nextIdx].id });
-    } else if (rowIndex === 4) {
       const idx = homeControlsOptions.findIndex((o) => o.id === settings.homeControls);
       const nextIdx =
         direction === 'next'
           ? (idx + 1) % homeControlsOptions.length
           : (idx - 1 + homeControlsOptions.length) % homeControlsOptions.length;
       onUpdateSettings({ homeControls: homeControlsOptions[nextIdx].id });
-    } else if (rowIndex === 5) {
+    } else if (rowIndex === 4) {
       const current = settings.dynamicAppBackgrounds !== false;
       onUpdateSettings({ dynamicAppBackgrounds: !current });
-    } else if (rowIndex === 7) {
+    } else if (rowIndex === 6) {
       const current = settings.showWeather !== false;
       onUpdateSettings({ showWeather: !current });
     }
@@ -186,7 +171,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
     typeof window !== 'undefined' &&
     (!!(window as any).AndroidBridge?.isNative?.() ||
       /Android|AFT|GoogleTV|SmartTV|AppleTV|HbbTV|CrKey/i.test(navigator.userAgent));
-  const maxAppearanceRow = isTvOrNative ? 8 : 9;
+  const maxAppearanceRow = isTvOrNative ? 7 : 8;
   const extrasRow = maxAppearanceRow + 1; // quick-settings strip under the preview
 
   const dockApps = apps.filter((a) => a.inDock);
@@ -578,9 +563,9 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
         }
       } else if (isRight) {
         e.preventDefault();
-        if (activeRow === 5) {
-          cycleOption('next', 5);
-        } else if (activeRow === 6) {
+        if (activeRow === 4) {
+          cycleOption('next', 4);
+        } else if (activeRow === 5) {
           soundService.playSelect();
           setActiveTab('organize');
           setHeaderIndex(2);
@@ -591,13 +576,13 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
             setOrganizeZone('unpinned');
             setOrganizeUnpinnedIndex(0);
           }
+        } else if (activeRow === 6) {
+          cycleOption('next', 6);
         } else if (activeRow === 7) {
-          cycleOption('next', 7);
-        } else if (activeRow === 8) {
           soundService.playSelect();
           setActiveTab('android');
           setHeaderIndex(3);
-        } else if (activeRow === 9) {
+        } else if (activeRow === 8) {
           soundService.playSelect();
           onOpenApkModal?.();
         } else {
@@ -605,9 +590,9 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
         }
       } else if (isLeft) {
         e.preventDefault();
-        if (activeRow === 5 || activeRow === 7) {
+        if (activeRow === 4 || activeRow === 6) {
           cycleOption('prev', activeRow);
-        } else if (activeRow < 5) {
+        } else if (activeRow < 4) {
           cycleOption('prev', activeRow);
         }
       } else if (isSelect) {
@@ -619,13 +604,13 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
           } else {
             setShowLocalGalleryModal(true);
           }
-        } else if (activeRow === 5) {
+        } else if (activeRow === 4) {
           if (onOpenBackdropModal) {
             onOpenBackdropModal();
           } else {
             setShowLocalBackdropModal(true);
           }
-        } else if (activeRow === 6) {
+        } else if (activeRow === 5) {
           setActiveTab('organize');
           setHeaderIndex(2);
           if (dockApps.length > 0) {
@@ -635,12 +620,12 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
             setOrganizeZone('unpinned');
             setOrganizeUnpinnedIndex(0);
           }
-        } else if (activeRow === 7) {
+        } else if (activeRow === 6) {
           onOpenLocationModal?.();
-        } else if (activeRow === 8) {
+        } else if (activeRow === 7) {
           setActiveTab('android');
           setHeaderIndex(3);
-        } else if (activeRow === 9) {
+        } else if (activeRow === 8) {
           onOpenApkModal?.();
         } else {
           cycleOption('next', activeRow);
@@ -683,11 +668,6 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
     {
       label: 'Font',
       value: settings.font,
-    },
-    {
-      label: 'Material',
-      value:
-        materialOptions.find((o) => o.id === settings.material)?.label || 'Soft',
     },
     {
       label: 'Home controls',
@@ -932,7 +912,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
               {/* Row 5: Dynamic App Backdrops (Highlight Reactive & Per-App Generator/Import) */}
               <div
                 ref={(el) => {
-                  rowRefs.current[5] = el;
+                  rowRefs.current[4] = el;
                 }}
                 onClick={() => {
                   setFocusZone('content');
@@ -946,7 +926,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
                   setActiveRow(5);
                 }}
                 className={`mt-0.5 py-1 px-2.5 md:px-3 rounded-xl cursor-pointer transition-all duration-150 border flex items-center justify-between ${
-                  activeRow === 5 && focusZone === 'content'
+                  activeRow === 4 && focusZone === 'content'
                     ? 'bg-white text-slate-900 border-white shadow-xl ring-2 ring-white z-10'
                     : 'bg-white/5 border-white/10 hover:bg-white/10 text-white'
                 }`}
@@ -954,14 +934,14 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
                 <div className="flex items-center gap-2.5">
                   <Sparkles
                     className={`w-3.5 h-3.5 ${
-                      activeRow === 5 && focusZone === 'content' ? 'text-amber-600' : 'text-amber-400'
+                      activeRow === 4 && focusZone === 'content' ? 'text-amber-600' : 'text-amber-400'
                     }`}
                   />
                   <div>
                     <div className="text-xs md:text-sm font-bold">Dynamic App Backdrops</div>
                     <div
                       className={`text-[9px] md:text-[10px] ${
-                        activeRow === 5 && focusZone === 'content' ? 'text-slate-600 font-medium' : 'text-white/60'
+                        activeRow === 4 && focusZone === 'content' ? 'text-slate-600 font-medium' : 'text-white/60'
                       }`}
                     >
                       {settings.dynamicAppBackgrounds !== false
@@ -975,14 +955,14 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      cycleOption('next', 5);
+                      cycleOption('next', 4);
                     }}
                     className={`text-[10px] font-bold px-2 py-0.5 rounded-md transition-colors cursor-pointer ${
                       settings.dynamicAppBackgrounds !== false
-                        ? activeRow === 5 && focusZone === 'content'
+                        ? activeRow === 4 && focusZone === 'content'
                           ? 'bg-amber-500/20 text-amber-900 border border-amber-600/30'
                           : 'bg-amber-400/20 text-amber-300 border border-amber-400/30'
-                        : activeRow === 5 && focusZone === 'content'
+                        : activeRow === 4 && focusZone === 'content'
                         ? 'bg-slate-200 text-slate-600'
                         : 'bg-white/10 text-white/50'
                     }`}
@@ -991,14 +971,14 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
                   </button>
                   <span
                     className={`text-xs font-semibold ${
-                      activeRow === 5 && focusZone === 'content' ? 'text-slate-800' : 'text-sky-300'
+                      activeRow === 4 && focusZone === 'content' ? 'text-slate-800' : 'text-sky-300'
                     }`}
                   >
                     Manage
                   </span>
                   <ChevronRight
                     className={`w-3.5 h-3.5 ${
-                      activeRow === 5 && focusZone === 'content' ? 'text-slate-900' : 'text-white/40'
+                      activeRow === 4 && focusZone === 'content' ? 'text-slate-900' : 'text-white/40'
                     }`}
                   />
                 </div>
@@ -1007,7 +987,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
               {/* Row 6: Organize App Tray Setting Row */}
               <div
                 ref={(el) => {
-                  rowRefs.current[6] = el;
+                  rowRefs.current[5] = el;
                 }}
                 onClick={() => {
                   setFocusZone('content');
@@ -1028,7 +1008,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
                   setActiveRow(6);
                 }}
                 className={`py-1 px-2.5 md:px-3 rounded-xl cursor-pointer transition-all duration-150 border flex items-center justify-between ${
-                  activeRow === 6 && focusZone === 'content'
+                  activeRow === 5 && focusZone === 'content'
                     ? 'bg-white text-slate-900 border-white shadow-xl ring-2 ring-white z-10'
                     : 'bg-white/5 border-white/10 hover:bg-white/10 text-white'
                 }`}
@@ -1036,14 +1016,14 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
                 <div className="flex items-center gap-2.5">
                   <ArrowLeftRight
                     className={`w-3.5 h-3.5 ${
-                      activeRow === 6 && focusZone === 'content' ? 'text-sky-600' : 'text-sky-400'
+                      activeRow === 5 && focusZone === 'content' ? 'text-sky-600' : 'text-sky-400'
                     }`}
                   />
                   <div>
                     <div className="text-xs md:text-sm font-bold">Organize App Tray</div>
                     <div
                       className={`text-[9px] md:text-[10px] ${
-                        activeRow === 6 && focusZone === 'content' ? 'text-slate-600 font-medium' : 'text-white/60'
+                        activeRow === 5 && focusZone === 'content' ? 'text-slate-600 font-medium' : 'text-white/60'
                       }`}
                     >
                       {dockApps.length} Apps in Tray · Move left / right / pin
@@ -1053,14 +1033,14 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
                 <div className="flex items-center gap-1.5">
                   <span
                     className={`text-xs font-semibold ${
-                      activeRow === 6 && focusZone === 'content' ? 'text-slate-800' : 'text-sky-300'
+                      activeRow === 5 && focusZone === 'content' ? 'text-slate-800' : 'text-sky-300'
                     }`}
                   >
                     Reorder
                   </span>
                   <ChevronRight
                     className={`w-3.5 h-3.5 ${
-                      activeRow === 6 && focusZone === 'content' ? 'text-slate-900' : 'text-white/40'
+                      activeRow === 5 && focusZone === 'content' ? 'text-slate-900' : 'text-white/40'
                     }`}
                   />
                 </div>
@@ -1069,7 +1049,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
               {/* Row 7: Weather Location Setting Row */}
               <div
                 ref={(el) => {
-                  rowRefs.current[7] = el;
+                  rowRefs.current[6] = el;
                 }}
                 onClick={() => {
                   setFocusZone('content');
@@ -1082,7 +1062,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
                   setActiveRow(7);
                 }}
                 className={`py-1 px-2.5 md:px-3 rounded-xl cursor-pointer transition-all duration-150 border flex items-center justify-between ${
-                  activeRow === 7 && focusZone === 'content'
+                  activeRow === 6 && focusZone === 'content'
                     ? 'bg-white text-slate-900 border-white shadow-xl ring-2 ring-white z-10'
                     : 'bg-white/5 border-white/10 hover:bg-white/10 text-white'
                 }`}
@@ -1090,14 +1070,14 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
                 <div className="flex items-center gap-2.5">
                   <MapPin
                     className={`w-3.5 h-3.5 ${
-                      activeRow === 7 && focusZone === 'content' ? 'text-sky-600' : 'text-sky-400'
+                      activeRow === 6 && focusZone === 'content' ? 'text-sky-600' : 'text-sky-400'
                     }`}
                   />
                   <div>
                     <div className="text-xs md:text-sm font-bold">Weather Display</div>
                     <div
                       className={`text-[9px] md:text-[10px] ${
-                        activeRow === 7 && focusZone === 'content' ? 'text-slate-600 font-medium' : 'text-white/60'
+                        activeRow === 6 && focusZone === 'content' ? 'text-slate-600 font-medium' : 'text-white/60'
                       }`}
                     >
                       {settings.showWeather !== false ? 'Shown on Home' : 'Hidden from Home'} · {settings.weatherCity || 'Auto-Detect'} ({settings.tempUnit || 'F'})
@@ -1109,15 +1089,15 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      cycleOption('next', 7);
+                      cycleOption('next', 6);
                     }}
                     title="Toggle showing weather on Home screen"
                     className={`text-[10px] font-bold px-2 py-0.5 rounded-md transition-colors cursor-pointer ${
                       settings.showWeather !== false
-                        ? activeRow === 7 && focusZone === 'content'
+                        ? activeRow === 6 && focusZone === 'content'
                           ? 'bg-sky-500/20 text-sky-950 border border-sky-600/30'
                           : 'bg-sky-400/20 text-sky-300 border border-sky-400/30'
-                        : activeRow === 7 && focusZone === 'content'
+                        : activeRow === 6 && focusZone === 'content'
                         ? 'bg-slate-200 text-slate-600'
                         : 'bg-white/10 text-white/50'
                     }`}
@@ -1126,14 +1106,14 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
                   </button>
                   <span
                     className={`text-xs font-semibold ${
-                      activeRow === 7 && focusZone === 'content' ? 'text-slate-800' : 'text-sky-300'
+                      activeRow === 6 && focusZone === 'content' ? 'text-slate-800' : 'text-sky-300'
                     }`}
                   >
                     Configure
                   </span>
                   <ChevronRight
                     className={`w-3.5 h-3.5 ${
-                      activeRow === 7 && focusZone === 'content' ? 'text-slate-900' : 'text-white/40'
+                      activeRow === 6 && focusZone === 'content' ? 'text-slate-900' : 'text-white/40'
                     }`}
                   />
                 </div>
@@ -1142,7 +1122,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
               {/* Row 8: Direct Shortcut to Android TV Settings */}
               <div
                 ref={(el) => {
-                  rowRefs.current[8] = el;
+                  rowRefs.current[7] = el;
                 }}
                 onClick={() => {
                   setFocusZone('content');
@@ -1156,7 +1136,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
                   setActiveRow(8);
                 }}
                 className={`py-1 px-2.5 md:px-3 rounded-xl cursor-pointer transition-all duration-150 border flex items-center justify-between ${
-                  activeRow === 8 && focusZone === 'content'
+                  activeRow === 7 && focusZone === 'content'
                     ? 'bg-white text-slate-900 border-white shadow-xl ring-2 ring-white z-10'
                     : 'bg-white/5 border-white/10 hover:bg-white/10 text-white'
                 }`}
@@ -1164,14 +1144,14 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
                 <div className="flex items-center gap-2.5">
                   <Smartphone
                     className={`w-3.5 h-3.5 ${
-                      activeRow === 8 && focusZone === 'content' ? 'text-sky-600' : 'text-sky-400'
+                      activeRow === 7 && focusZone === 'content' ? 'text-sky-600' : 'text-sky-400'
                     }`}
                   />
                   <div>
                     <div className="text-xs md:text-sm font-bold">Android TV System Settings</div>
                     <div
                       className={`text-[9px] md:text-[10px] ${
-                        activeRow === 8 && focusZone === 'content' ? 'text-slate-500' : 'text-white/40'
+                        activeRow === 7 && focusZone === 'content' ? 'text-slate-500' : 'text-white/40'
                       }`}
                     >
                       Wi-Fi, Bluetooth, Display, Sound & About
@@ -1180,7 +1160,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
                 </div>
                 <ChevronRight
                   className={`w-3.5 h-3.5 ${
-                    activeRow === 8 && focusZone === 'content' ? 'text-slate-900' : 'text-white/40'
+                    activeRow === 7 && focusZone === 'content' ? 'text-slate-900' : 'text-white/40'
                   }`}
                 />
               </div>
@@ -1189,7 +1169,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
               {!isTvOrNative && (
                 <div
                   ref={(el) => {
-                    rowRefs.current[9] = el;
+                    rowRefs.current[8] = el;
                   }}
                   onClick={() => {
                     setFocusZone('content');
@@ -1202,7 +1182,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
                     setActiveRow(9);
                   }}
                   className={`py-1.5 px-3 rounded-xl cursor-pointer transition-all duration-200 border flex items-center justify-between ${
-                    activeRow === 9 && focusZone === 'content'
+                    activeRow === 8 && focusZone === 'content'
                       ? 'bg-white text-slate-900 border-white shadow-xl ring-2 ring-white z-10'
                       : 'bg-white/5 border-white/10 hover:bg-white/10 text-white'
                   }`}
@@ -1210,14 +1190,14 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
                   <div className="flex items-center gap-2.5">
                     <Download
                       className={`w-4 h-4 ${
-                        activeRow === 9 && focusZone === 'content' ? 'text-sky-600' : 'text-sky-400'
+                        activeRow === 8 && focusZone === 'content' ? 'text-sky-600' : 'text-sky-400'
                       }`}
                     />
                     <div>
                       <div className="text-xs md:text-sm font-bold">Install on TV (Download APK)</div>
                       <div
                         className={`text-[10px] md:text-[11px] ${
-                          activeRow === 9 && focusZone === 'content' ? 'text-slate-600 font-medium' : 'text-white/60'
+                          activeRow === 8 && focusZone === 'content' ? 'text-slate-600 font-medium' : 'text-white/60'
                         }`}
                       >
                         Chromecast &amp; Android TV package · In-place upgrade APK
@@ -1227,14 +1207,14 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
                   <div className="flex items-center gap-1.5">
                     <span
                       className={`text-xs font-semibold ${
-                        activeRow === 9 && focusZone === 'content' ? 'text-slate-800' : 'text-sky-300'
+                        activeRow === 8 && focusZone === 'content' ? 'text-slate-800' : 'text-sky-300'
                       }`}
                     >
                       Get APK
                     </span>
                     <ChevronRight
                       className={`w-4 h-4 ${
-                        activeRow === 9 && focusZone === 'content' ? 'text-slate-900' : 'text-white/40'
+                        activeRow === 8 && focusZone === 'content' ? 'text-slate-900' : 'text-white/40'
                       }`}
                     />
                   </div>

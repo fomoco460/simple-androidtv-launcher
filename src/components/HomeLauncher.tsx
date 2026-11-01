@@ -343,7 +343,7 @@ export const HomeLauncher: React.FC<HomeLauncherProps> = ({
   }, [focusArea]);
 
   // Style class getters based on user settings
-  const materialClass = `material-${settings.material}`;
+  const materialClass = 'material-soft';
   const focusClass = `focus-${settings.focus}`;
 
   // Safe zone overscan margin calculation for TV

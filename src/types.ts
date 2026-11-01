@@ -35,7 +35,6 @@ export type FontPreset = 'Manrope' | 'Outfit' | 'Plus Jakarta Sans' | 'System';
 
 export type FocusPreset = 'glass' | 'glow' | 'border' | 'pop';
 
-export type MaterialPreset = 'soft' | 'frosted' | 'clear' | 'solid';
 
 export type HomeControlsPreset = 'text' | 'icons' | 'both';
 
@@ -60,7 +59,6 @@ export interface LauncherSettings {
   apps: AppsDisplayPreset;
   font: FontPreset;
   focus: FocusPreset;
-  material: MaterialPreset;
   homeControls: HomeControlsPreset;
   uiScale?: UiScalePreset; // TV 10-foot scale for 4K TV / living room viewing distance
   safeZone: number; // 0, 3, 5% TV overscan

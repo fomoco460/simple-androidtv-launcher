@@ -56,25 +56,6 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
-.material-frosted {
-  background: rgba(255, 255, 255, 0.16);
-  backdrop-filter: blur(40px) saturate(180%);
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-}
-
-.material-clear {
-  background: rgba(10, 12, 16, 0.4);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.material-solid {
-  background: #14171f;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
 /* Focus styles - smooth GPU-accelerated scaling with zero layout reflow */
 .focus-glass {
   background: rgba(255, 255, 255, 0.26) !important;
