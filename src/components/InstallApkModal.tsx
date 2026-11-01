@@ -181,7 +181,7 @@ export const InstallApkModal: React.FC<InstallApkModalProps> = ({ onClose }) => 
                 <h2 className="text-xl font-bold tracking-tight">Install Clean Launcher on Chromecast & Android TV</h2>
                 <span className="px-2.5 py-0.5 text-[11px] font-bold tracking-wider uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full flex items-center gap-1">
                   <Sparkles className="w-3 h-3 text-emerald-400" />
-                  Milestone v3.3.2 (Build 37)
+                  Milestone v3.3.3 (Build 38)
                 </span>
               </div>
               <p className="text-xs text-zinc-400 mt-0.5">
@@ -208,7 +208,7 @@ export const InstallApkModal: React.FC<InstallApkModalProps> = ({ onClose }) => 
           <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-zinc-900 to-sky-950/30 border border-emerald-500/30 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold text-xs shrink-0">
-                v3.3.2
+                v3.3.3
               </div>
               <div className="space-y-0.5">
                 <div className="text-xs font-bold text-emerald-300 flex items-center gap-2">

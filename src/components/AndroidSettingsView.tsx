@@ -20,7 +20,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 
-interface SettingCategory {
+export interface SettingCategory {
   id: string;
   name: string;
   description: string;
@@ -30,7 +30,7 @@ interface SettingCategory {
   icon: React.ReactNode;
 }
 
-const ANDROID_SETTINGS_LIST: SettingCategory[] = [
+export const ANDROID_SETTINGS_LIST: SettingCategory[] = [
   {
     id: 'system',
     name: 'All Android Settings',
@@ -115,15 +115,37 @@ const ANDROID_SETTINGS_LIST: SettingCategory[] = [
   },
 ];
 
+/** Opens one Android system settings screen through the native bridge (or an intent link in a browser). */
+export function launchAndroidSetting(item: SettingCategory): void {
+  const bridge = (window as any).AndroidBridge;
+  try {
+    if (bridge) {
+      if (typeof bridge.openSettings === 'function' && item.androidAction) {
+        bridge.openSettings(item.androidAction);
+        return;
+      }
+      if (typeof bridge.openAndroidSettings === 'function') {
+        bridge.openAndroidSettings();
+        return;
+      }
+    }
+    window.location.href = item.intent;
+  } catch {
+    /* nothing else to try */
+  }
+}
+
 interface AndroidSettingsViewProps {
+  /** Open the Home button interceptor assistant straight away. */
+  startWithInterceptor?: boolean;
   onBack?: () => void;
 }
 
-export const AndroidSettingsView: React.FC<AndroidSettingsViewProps> = ({ onBack }) => {
+export const AndroidSettingsView: React.FC<AndroidSettingsViewProps> = ({ onBack, startWithInterceptor = false }) => {
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [statusNotice, setStatusNotice] = useState<string | null>(null);
-  const [showInterceptorModal, setShowInterceptorModal] = useState<boolean>(false);
+  const [showInterceptorModal, setShowInterceptorModal] = useState<boolean>(startWithInterceptor);
   const [modalFocusIndex, setModalFocusIndex] = useState<number>(0);
 
   const [isA11yActive, setIsA11yActive] = useState<boolean>(() => {
@@ -224,14 +246,16 @@ export const AndroidSettingsView: React.FC<AndroidSettingsViewProps> = ({ onBack
           k.preventDefault();
           k.stopImmediatePropagation();
           soundService.playBack();
-          if (showInterceptorModal) setShowInterceptorModal(false);
-          else onBackRef.current?.();
+          if (showInterceptorModal) {
+            setShowInterceptorModal(false);
+            if (startWithInterceptor) onBackRef.current?.(); // opened straight from Settings: go back there
+          } else onBackRef.current?.();
         }
         // any other key carries on to the list below
       },
       ['keydown', 'chromecast-back-press'],
     );
-  }, [showInterceptorModal]);
+  }, [showInterceptorModal, startWithInterceptor]);
 
   // Keyboard remote navigation for main settings list
   useEffect(() => {
@@ -363,6 +387,7 @@ export const AndroidSettingsView: React.FC<AndroidSettingsViewProps> = ({ onBack
         } else if (modalFocusIndex === 5) {
           // Close modal
           setShowInterceptorModal(false);
+          if (startWithInterceptor) onBackRef.current?.();
         }
       }
     };

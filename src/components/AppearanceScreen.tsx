@@ -12,7 +12,7 @@ import {
 import { HomeLauncher } from './HomeLauncher';
 import { AmbientMode } from './AmbientMode';
 import { AmbientPhotoPicker } from './AmbientPhotoPicker';
-import { AndroidSettingsView } from './AndroidSettingsView';
+import { AndroidSettingsView, ANDROID_SETTINGS_LIST, launchAndroidSetting } from './AndroidSettingsView';
 import { ScaledPreview } from './ScaledPreview';
 import { AppIcon } from './BrandIcons';
 import { useSpatialNav } from '../hooks/useSpatialNav';
@@ -389,7 +389,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
       case 'homerow':
         return 'Your home row is the single row of apps on the Home screen.';
       default:
-        return 'Android TV settings opens Wi-Fi, Bluetooth, display, sound and more.';
+        return 'These open the Android TV system settings. Back from there returns to the launcher.';
     }
   };
 
@@ -607,14 +607,18 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
       default:
         return (
           <>
-            <Row
-              label="Android TV settings"
-              hint="Wi-Fi, Bluetooth, display, sound and about"
-              kind="link"
-              value="Open"
-              onPress={() => setShowAndroid(true)}
-              initial
-            />
+            {ANDROID_SETTINGS_LIST.map((item, i) => (
+              <Row
+                key={item.id}
+                label={item.name}
+                hint={item.description}
+                kind="link"
+                value="Open"
+                icon={item.icon}
+                initial={i === 0}
+                onPress={() => (item.id === 'accessibility' ? setShowAndroid(true) : launchAndroidSetting(item))}
+              />
+            ))}
             {!isTvOrNative && (
               <Row
                 label="Install on TV"
@@ -736,7 +740,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
 
       {showAndroid && (
         <div className="fixed inset-0 z-40 bg-[#070b12] text-white overflow-hidden px-10 py-8">
-          <AndroidSettingsView onBack={() => setShowAndroid(false)} />
+          <AndroidSettingsView startWithInterceptor onBack={() => setShowAndroid(false)} />
         </div>
       )}
 
