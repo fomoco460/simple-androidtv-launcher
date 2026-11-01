@@ -166,14 +166,14 @@ const Row: React.FC<RowProps> = ({ label, hint, value, kind, on, dim, icon, onPr
         soundService.playSelect();
         onPress();
       }}
-      className={`w-full flex items-center gap-3 rounded-2xl px-4 py-3 md:py-3.5 text-left bg-white/[0.06] border border-white/10 hover:bg-white/10 transition cursor-pointer ${
+      className={`w-full flex items-center gap-3 rounded-2xl px-4 py-2.5 text-left bg-white/[0.06] border border-white/10 hover:bg-white/10 transition cursor-pointer ${
         dim ? 'opacity-50' : ''
       }`}
     >
       {icon && <div className="w-9 h-9 flex items-center justify-center shrink-0">{icon}</div>}
       <div className="flex-1 min-w-0">
-        <div className="text-base md:text-lg font-semibold text-white truncate">{label}</div>
-        {hint && <div className="text-xs md:text-sm text-white/50 truncate">{hint}</div>}
+        <div className="text-lg font-semibold text-white truncate">{label}</div>
+        {hint && <div className="text-sm text-white/50 line-clamp-2 leading-snug">{hint}</div>}
       </div>
       {kind === 'toggle' ? (
         <span
@@ -184,7 +184,7 @@ const Row: React.FC<RowProps> = ({ label, hint, value, kind, on, dim, icon, onPr
           {on ? 'On' : 'Off'}
         </span>
       ) : (
-        <span className="shrink-0 flex items-center gap-1.5 text-sm md:text-base font-semibold text-sky-300 max-w-[55%]">
+        <span className="shrink-0 flex items-center gap-1.5 text-base font-semibold text-sky-300 max-w-[50%]">
           {kind === 'choice' && <ChevronLeft className="w-4 h-4 text-white/40 shrink-0" />}
           <span className="truncate">{value}</span>
           <ChevronRight className="w-4 h-4 text-white/40 shrink-0" />
@@ -194,9 +194,74 @@ const Row: React.FC<RowProps> = ({ label, hint, value, kind, on, dim, icon, onPr
   );
 };
 
-const Note: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <p className="px-2 pt-1 text-xs md:text-sm text-white/45 leading-relaxed">{children}</p>
-);
+/* ---------- app tile for the Home row editor ---------- */
+
+type Dir4 = 'left' | 'right' | 'up' | 'down';
+
+const AppTile: React.FC<{
+  app: AppItem;
+  iconStyle: LauncherSettings['iconStyle'];
+  index?: number;
+  moving: boolean;
+  initial?: boolean;
+  onPress: () => void;
+  onAdjust: (dir: Dir4) => void;
+}> = ({ app, iconStyle, index, moving, initial, onPress, onAdjust }) => {
+  const ref = useRef<HTMLButtonElement | null>(null);
+  const adjustRef = useRef(onAdjust);
+  adjustRef.current = onAdjust;
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const h = (e: Event) => adjustRef.current((e as CustomEvent<{ dir: Dir4 }>).detail.dir);
+    el.addEventListener('adjust', h);
+    return () => el.removeEventListener('adjust', h);
+  }, []);
+  return (
+    <button
+      ref={ref}
+      data-nav
+      data-app-id={app.id}
+      {...(moving ? { 'data-adjust': 'all' } : {})}
+      {...(initial ? { 'data-nav-initial': true } : {})}
+      onClick={() => {
+        soundService.playSelect();
+        onPress();
+      }}
+      className={`relative flex flex-col items-center justify-center gap-1.5 rounded-2xl p-2 aspect-square border cursor-pointer transition ${
+        moving ? 'bg-sky-400/25 border-sky-300' : 'bg-white/[0.06] border-white/10 hover:bg-white/10'
+      }`}
+    >
+      {index !== undefined && (
+        <span className="absolute top-1.5 left-2 text-[11px] font-bold text-white/40">{index + 1}</span>
+      )}
+      <AppIcon app={app} styleMode={iconStyle} className="w-11 h-11" />
+      <span className="text-sm font-semibold text-white/85 truncate max-w-full">{app.name}</span>
+    </button>
+  );
+};
+
+/** Draws its children on a fixed 1120x630 canvas scaled to fit the screen, so Settings looks the same on every TV. */
+const STAGE_W = 1120;
+const STAGE_H = 630;
+const Stage: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [scale, setScale] = useState(() => Math.min(window.innerWidth / STAGE_W, window.innerHeight / STAGE_H));
+  useEffect(() => {
+    const f = () => setScale(Math.min(window.innerWidth / STAGE_W, window.innerHeight / STAGE_H));
+    window.addEventListener('resize', f);
+    return () => window.removeEventListener('resize', f);
+  }, []);
+  return (
+    <div className="absolute inset-0 overflow-hidden bg-[#070b12]">
+      <div
+        className="absolute left-1/2 top-1/2 origin-center"
+        style={{ width: STAGE_W, height: STAGE_H, transform: `translate(-50%, -50%) scale(${scale})` }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+};
 
 export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
   settings,
@@ -215,6 +280,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
   const [category, setCategory] = useState<Category>('look');
   const [picker, setPicker] = useState<'day' | 'night' | null>(null);
   const [showAndroid, setShowAndroid] = useState(false);
+  const [movingId, setMovingId] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const sideRefs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -248,6 +314,10 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
     containerRef: rootRef,
     enabled: !isModalOpen && !showAndroid && !picker,
     onBack: () => {
+      if (movingId) {
+        setMovingId(null);
+        return;
+      }
       const active = document.activeElement as HTMLElement | null;
       if (active && contentRef.current?.contains(active)) {
         sideRefs.current[category]?.focus();
@@ -292,6 +362,35 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
   const setSound = (theme: SoundTheme, volume: SoundVolume) => {
     onUpdateSettings({ soundTheme: theme, soundVolume: volume });
     soundService.preview(theme, volume);
+  };
+
+  // An app that moves between the home row and "More apps" is a new element, so focus it again.
+  const refocusApp = (id: string) =>
+    window.setTimeout(() => {
+      contentRef.current?.querySelector<HTMLElement>(`[data-app-id="${id}"]`)?.focus();
+    }, 60);
+
+  const noteFor = (): string => {
+    switch (category) {
+      case 'look':
+        return 'Background, font and how the app row looks on Home. The preview is your Home screen as it will appear.';
+      case 'clock':
+        return 'Clock style, date and weather apply to Home and to Ambient mode.';
+      case 'ambient':
+        return 'Ambient mode starts when the remote has been idle. Any button wakes it. After dark it uses your Night photos.';
+      case 'night':
+        return scheduled
+          ? 'Night mode runs between the start and end times. Left and Right change a time in 30 minute steps.'
+          : settings.nightMode === 'always'
+            ? 'Night mode is always on.'
+            : 'Night mode is off. Choose Scheduled to set start and end times.';
+      case 'sound':
+        return 'Sounds play as you move around and select. Changing a value plays a sample.';
+      case 'homerow':
+        return 'Your home row is the single row of apps on the Home screen.';
+      default:
+        return 'Android TV settings opens Wi-Fi, Bluetooth, display, sound and more.';
+    }
   };
 
   const dockApps = apps.filter((a) => a.inDock);
@@ -396,10 +495,6 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
               value={`${dayIds.length} of ${AMBIENT_PHOTOS.length}`}
               onPress={() => setPicker('day')}
             />
-            <Note>
-              Ambient mode starts when the remote has been idle. Any button wakes it. The clock, date and weather follow
-              your Clock &amp; Weather settings. After dark it switches to your Night photos.
-            </Note>
           </>
         );
       case 'night':
@@ -432,13 +527,6 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
               value={`${nightIds.length} of ${AMBIENT_PHOTOS.length}`}
               onPress={() => setPicker('night')}
             />
-            <Note>
-              {scheduled
-                ? 'Night mode runs between the start and end times. Left and Right change a time in 30 minute steps.'
-                : settings.nightMode === 'always'
-                  ? 'Night mode is always on.'
-                  : 'Night mode is off. Choose Scheduled to set start and end times.'}
-            </Note>
           </>
         );
       case 'sound':
@@ -456,28 +544,64 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
       case 'homerow':
         return (
           <>
-            <Note>OK adds or removes an app from the home row. Left and Right move an app along the row.</Note>
-            {[...dockApps, ...otherApps].map((app, i) => {
-              const pinned = app.inDock;
-              const pos = dockApps.findIndex((a) => a.id === app.id);
-              return (
-                <Row
-                  key={app.id}
-                  label={app.name}
-                  kind="choice"
-                  value={pinned ? `On home row · ${pos + 1}` : 'Not on home row'}
-                  icon={<AppIcon app={app} styleMode={settings.iconStyle} className="w-8 h-8" />}
-                  initial={i === 0}
-                  onPress={() => {
-                    if (pinned) onMoveDockApp?.(app.id, 'right');
-                    else onToggleDockPin?.(app.id);
-                  }}
-                  onPrev={() => {
-                    if (pinned) onMoveDockApp?.(app.id, 'left');
-                  }}
-                />
-              );
-            })}
+            <div className="flex items-baseline justify-between gap-2 px-1">
+              <span className="text-sm font-bold uppercase tracking-wider text-white/45 shrink-0">
+                On your home row · {dockApps.length}
+              </span>
+              <span className="text-sm text-sky-300 font-semibold text-right">
+                {movingId ? 'Left / Right move · Down removes · OK done' : 'OK picks an app up to move it'}
+              </span>
+            </div>
+            {dockApps.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-white/15 p-4 text-sm text-white/50 text-center">
+                No apps on the home row. Pick one below to add it.
+              </div>
+            ) : (
+              <div className="grid grid-cols-4 gap-2.5 p-1">
+                {dockApps.map((app, i) => (
+                  <AppTile
+                    key={app.id}
+                    app={app}
+                    iconStyle={settings.iconStyle}
+                    index={i}
+                    initial={i === 0}
+                    moving={movingId === app.id}
+                    onPress={() => setMovingId(movingId === app.id ? null : app.id)}
+                    onAdjust={(dir) => {
+                      if (dir === 'left' || dir === 'right') onMoveDockApp?.(app.id, dir);
+                      else if (dir === 'down') {
+                        setMovingId(null);
+                        onToggleDockPin?.(app.id);
+                        refocusApp(app.id);
+                      }
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+            {otherApps.length > 0 && (
+              <>
+                <div className="px-1 pt-2 text-sm font-bold uppercase tracking-wider text-white/45">
+                  More apps · OK adds to the row
+                </div>
+                <div className="grid grid-cols-4 gap-2.5 p-1">
+                  {otherApps.map((app, i) => (
+                    <AppTile
+                      key={app.id}
+                      app={app}
+                      iconStyle={settings.iconStyle}
+                      moving={false}
+                      initial={dockApps.length === 0 && i === 0}
+                      onPress={() => {
+                        onToggleDockPin?.(app.id);
+                        refocusApp(app.id);
+                      }}
+                      onAdjust={() => {}}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
           </>
         );
       default:
@@ -516,12 +640,14 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
       </div>
     );
   }
+  const note = noteFor();
 
   return (
     <>
+    <Stage>
     <div
       ref={rootRef}
-      className="relative w-full h-full bg-[#070b12] text-white flex flex-col p-5 md:p-8 overflow-hidden select-none"
+      className="relative w-full h-full bg-[#070b12] text-white flex flex-col px-8 py-6 overflow-hidden select-none"
       style={{ fontFamily: settings.font === 'System' ? 'sans-serif' : `'${settings.font}', sans-serif` }}
     >
       <div className="flex items-center gap-4 mb-4 shrink-0 px-1 pt-1">
@@ -531,14 +657,14 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
             soundService.playBack();
             onBackToHome();
           }}
-          className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm md:text-base font-semibold bg-white/10 border border-white/15 cursor-pointer"
+          className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-lg font-semibold bg-white/10 border border-white/15 cursor-pointer"
         >
           <ChevronLeft className="w-5 h-5" /> Home
         </button>
-        <h1 className="text-xl md:text-2xl font-bold tracking-tight">Settings</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
       </div>
 
-      <div className="flex-1 min-h-0 grid grid-cols-[12rem_minmax(0,1fr)_minmax(0,36%)] md:grid-cols-[14rem_minmax(0,1fr)_minmax(0,36%)] gap-5">
+      <div className="flex-1 min-h-0 grid grid-cols-[14rem_minmax(0,1fr)_22rem] gap-6">
         {/* Categories */}
         <nav ref={navRef} className="flex flex-col gap-2 min-h-0 overflow-y-auto no-scrollbar p-2 -m-2">
           {CATEGORIES.map((c) => {
@@ -561,11 +687,11 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
                   const first = contentRef.current?.querySelector<HTMLElement>('[data-nav]');
                   first?.focus();
                 }}
-                className={`flex items-center gap-3 rounded-2xl px-4 py-3 md:py-3.5 text-left text-base md:text-lg font-semibold cursor-pointer transition ${
+                className={`flex items-center gap-3 rounded-2xl px-4 py-2.5 text-left text-lg font-semibold cursor-pointer transition ${
                   active ? 'bg-white text-slate-900' : 'bg-white/[0.06] text-white/80 border border-white/10'
                 }`}
               >
-                <Icon className="w-5 h-5 shrink-0" />
+                <Icon className="w-6 h-6 shrink-0" />
                 <span className="truncate">{c.label}</span>
               </button>
             );
@@ -594,20 +720,26 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
               </div>
             )}
           </ScaledPreview>
-          <div className="text-xs md:text-sm text-white/50 text-center">
+          <div className="text-sm text-white/50 text-center">
             {previewIsAmbient
               ? category === 'night'
                 ? 'Ambient mode at night'
                 : 'Ambient mode by day'
               : `Home screen · ${backgroundName(settings.background)}`}
           </div>
+          {note && (
+            <div className="mt-2 rounded-2xl bg-white/[0.05] border border-white/10 p-3.5 text-base text-white/60 leading-relaxed">
+              {note}
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="shrink-0 pt-3 text-xs md:text-sm text-white/40 text-center">
+      <div className="shrink-0 pt-3 text-sm text-white/40 text-center">
         Up / Down move · Left / Right change a value · OK select · Back returns to the categories
       </div>
     </div>
+    </Stage>
 
       {picker && (
         <AmbientPhotoPicker

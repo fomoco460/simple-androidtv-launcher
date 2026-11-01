@@ -13,6 +13,7 @@ import { pushKeyOwner } from '../services/keyGate';
  *   - mark every control with `data-nav` (buttons, tiles, inputs, ...)
  *   - arrows move focus to the nearest control in that direction (spatial navigation);
  *     a control with `data-adjust` instead receives an 'adjust' CustomEvent on Left/Right
+ *     (`data-adjust="all"`: on all four arrows)
  *   - Enter presses the focused control, Back/Escape calls `onBack`
  *   - the focused control gets a visible highlight (see `[data-nav]:focus` in index.css)
  *   - events are swallowed while the screen is open, so screens underneath don't also react
@@ -191,7 +192,8 @@ export function useSpatialNav({
         e.preventDefault();
         e.stopImmediatePropagation();
         // Controls marked data-adjust (value rows, sliders) use Left/Right to change their value.
-        if (current && (dir === 'left' || dir === 'right') && current.hasAttribute('data-adjust')) {
+        const adjustMode = current?.getAttribute('data-adjust'); // "all" also sends Up / Down
+        if (current && adjustMode !== null && (adjustMode === 'all' || dir === 'left' || dir === 'right')) {
           current.dispatchEvent(new CustomEvent('adjust', { detail: { dir }, bubbles: true }));
           return;
         }
