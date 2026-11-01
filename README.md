@@ -73,3 +73,4 @@ The version comes from `package.json`. Upload the resulting APK to a GitHub Rele
 ## Credits
 
 * **ROBOTECH GP** font by Gustavo Paz L., licensed under [CC BY-SA 4.0](http://creativecommons.org/licenses/by-sa/4.0/). See `public/fonts/ROBOTECH-GP-LICENSE.txt`.
+* **Space photos** (Ambient Mode) courtesy of NASA, NASA/ESA/CSA/STScI, NASA/JPL-Caltech, NOAA/GSFC and the ISS crew. NASA imagery is generally not subject to copyright; see `public/wallpapers/space/CREDITS.txt` for per-photo credits. No NASA endorsement is implied.
