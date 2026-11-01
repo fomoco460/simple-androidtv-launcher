@@ -113,16 +113,16 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ settings, onWake }) =>
               <img
                 src={wp.src}
                 alt=""
-                className={`w-full h-full object-cover ${i === index ? 'animate-ambientDrift' : ''}`}
+                className={`w-full h-full object-cover brightness-[0.55] saturate-[0.9] ${i === index ? 'animate-ambientDrift' : ''}`}
               />
             )}
           </div>
         );
       })}
 
-      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-black/30" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/50" />
 
-      <div className="absolute left-14 bottom-12 md:left-20 md:bottom-16 text-white drop-shadow-[0_2px_18px_rgba(0,0,0,0.6)]">
+      <div className="absolute left-14 bottom-12 md:left-20 md:bottom-16 text-white/90 drop-shadow-[0_2px_18px_rgba(0,0,0,0.6)]">
         <div className="text-[5.5rem] md:text-[8rem] font-extralight leading-none tracking-tight">{time}</div>
         <div className="mt-2 text-xl md:text-3xl font-light text-white/85">{date}</div>
         {weather && (
