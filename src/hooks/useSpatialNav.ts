@@ -11,7 +11,8 @@ import { pushKeyOwner } from '../services/keyGate';
  *
  * This hook gives a screen full navigation with no per-screen bookkeeping:
  *   - mark every control with `data-nav` (buttons, tiles, inputs, ...)
- *   - arrows move focus to the nearest control in that direction (spatial navigation)
+ *   - arrows move focus to the nearest control in that direction (spatial navigation);
+ *     a control with `data-adjust` instead receives an 'adjust' CustomEvent on Left/Right
  *   - Enter presses the focused control, Back/Escape calls `onBack`
  *   - the focused control gets a visible highlight (see `[data-nav]:focus` in index.css)
  *   - events are swallowed while the screen is open, so screens underneath don't also react
@@ -114,14 +115,31 @@ export function useSpatialNav({
   const onBackRef = useRef(onBack);
   onBackRef.current = onBack;
 
-  // Initial focus: the control marked data-nav-initial, otherwise the first one.
+  // Remember the last focused control so focus returns there when the screen is re-enabled
+  // (for example after a dialog opened from it closes).
+  const lastFocused = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const root = containerRef.current;
+    if (!root) return;
+    const onFocusIn = (e: FocusEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && t.matches?.(selector)) lastFocused.current = t;
+    };
+    root.addEventListener('focusin', onFocusIn);
+    return () => root.removeEventListener('focusin', onFocusIn);
+  }, [containerRef, selector]);
+
+  // Initial focus: the last focused control, else the one marked data-nav-initial, else the first.
   useEffect(() => {
     if (!enabled) return;
     const id = window.setTimeout(() => {
       const root = containerRef.current;
       if (!root) return;
+      const last = lastFocused.current;
       const initial =
-        root.querySelector<HTMLElement>('[data-nav-initial]') ?? getItems(root, selector)[0];
+        (last && root.contains(last) && isVisible(last) ? last : null) ??
+        root.querySelector<HTMLElement>('[data-nav-initial]') ??
+        getItems(root, selector)[0];
       if (initial) focusItem(initial);
     }, 30);
     return () => window.clearTimeout(id);
@@ -172,6 +190,11 @@ export function useSpatialNav({
         }
         e.preventDefault();
         e.stopImmediatePropagation();
+        // Controls marked data-adjust (value rows, sliders) use Left/Right to change their value.
+        if (current && (dir === 'left' || dir === 'right') && current.hasAttribute('data-adjust')) {
+          current.dispatchEvent(new CustomEvent('adjust', { detail: { dir }, bubbles: true }));
+          return;
+        }
         const items = getItems(root, selector);
         const next = current
           ? pickNext(current, items, dir)

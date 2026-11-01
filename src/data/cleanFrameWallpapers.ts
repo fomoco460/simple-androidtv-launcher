@@ -51,7 +51,7 @@ export const CLEAN_FRAME_WALLPAPERS: CleanFrameWallpaper[] = [
     name: 'Desert Stars',
     src: '/wallpapers/cleanframe/night.jpg',
     thumb: '/wallpapers/cleanframe/night-thumb.jpg',
-    tone: 'light',
+    tone: 'dark',
     description: 'Starlit nighttime dunes and clear celestial sky',
   },
   {

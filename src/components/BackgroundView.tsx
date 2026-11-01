@@ -1,11 +1,14 @@
 import React, { useEffect, useRef } from 'react';
 import { BackgroundPreset } from '../types';
 import { CLEAN_FRAME_WALLPAPERS } from '../data/cleanFrameWallpapers';
+import { SPACE_PHOTOS } from '../data/ambientPhotos';
 
 interface BackgroundViewProps {
   preset: BackgroundPreset;
   customUrl?: string;
   activeBackdropUrl?: string;
+  /** Draw animated themes once instead of animating (gallery thumbnails). */
+  still?: boolean;
 }
 
 interface Star {
@@ -21,6 +24,7 @@ export const BackgroundView: React.FC<BackgroundViewProps> = ({
   preset,
   customUrl,
   activeBackdropUrl,
+  still = false,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -55,6 +59,9 @@ export const BackgroundView: React.FC<BackgroundViewProps> = ({
     ? CLEAN_FRAME_WALLPAPERS.find((w) => w.presetId === preset)
     : null;
 
+  // NASA photo wallpapers use preset ids like 'space-earthset-orion'
+  const spacePhoto = preset.startsWith('space-') ? SPACE_PHOTOS.find((p) => p.id === preset) : null;
+
   // Starfield canvas for Desert stars, Deep space, and Nordic aurora
   useEffect(() => {
     if (preset !== 'desert-stars' && preset !== 'deep-space' && preset !== 'nordic-aurora') {
@@ -66,7 +73,7 @@ export const BackgroundView: React.FC<BackgroundViewProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    let animationFrameId: number;
+    let animationFrameId = 0;
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
 
@@ -138,20 +145,21 @@ export const BackgroundView: React.FC<BackgroundViewProps> = ({
     };
 
     render();
+    if (still) cancelAnimationFrame(animationFrameId);
 
     return () => {
       window.removeEventListener('resize', handleResize);
       cancelAnimationFrame(animationFrameId);
     };
-  }, [preset]);
+  }, [preset, still]);
 
   return (
     <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none select-none z-0">
       {/* BASE WALLPAPER LAYER */}
-      {cleanFrameWp ? (
+      {cleanFrameWp || spacePhoto ? (
         <div
           className="absolute inset-0 bg-cover bg-center transition-opacity duration-700"
-          style={{ backgroundImage: `url(${cleanFrameWp.src})` }}
+          style={{ backgroundImage: `url(${(cleanFrameWp ?? spacePhoto)!.src})` }}
         />
       ) : preset === 'custom' && customUrl ? (
         <div
@@ -285,7 +293,7 @@ export const BackgroundView: React.FC<BackgroundViewProps> = ({
       )}
 
       {/* Render Canvas for animated particles / stars (only when active on base ambient presets) */}
-      {(preset === 'desert-stars' || preset === 'deep-space' || preset === 'nordic-aurora') && !cleanFrameWp && (
+      {(preset === 'desert-stars' || preset === 'deep-space' || preset === 'nordic-aurora') && !cleanFrameWp && !spacePhoto && (
         <canvas
           ref={canvasRef}
           className="absolute inset-0 w-full h-full pointer-events-none"

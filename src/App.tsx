@@ -9,7 +9,7 @@ import { LocationModal } from './components/LocationModal';
 import { InstallApkModal } from './components/InstallApkModal';
 import { WallpaperGalleryModal } from './components/WallpaperGalleryModal';
 import { AmbientMode } from './components/AmbientMode';
-import { isNightModeActive } from './services/daypart';
+import { isNightActive } from './services/daypart';
 import { AppContextMenu, AppMenuContext } from './components/AppContextMenu';
 import { AppBackdropModal } from './components/AppBackdropModal';
 import { soundService } from './services/sound';
@@ -33,7 +33,8 @@ const DEFAULT_SETTINGS: LauncherSettings = {
   uiScale: 'auto',
   clockStyle: 'standard',
   nightMode: 'auto',
-  ambientPhotos: 'smart',
+  nightStart: 22 * 60,
+  nightEnd: 6 * 60,
   ambientMinutes: 5,
   soundTheme: 'click',
   soundVolume: 'medium',
@@ -56,6 +57,8 @@ export default function App() {
           ...parsed,
           clockFormat: parsed.clockFormat || 'auto',
           ambientMinutes: typeof parsed.ambientMinutes === 'number' ? parsed.ambientMinutes : 5,
+          nightStart: typeof parsed.nightStart === 'number' ? parsed.nightStart : 22 * 60,
+          nightEnd: typeof parsed.nightEnd === 'number' ? parsed.nightEnd : 6 * 60,
           soundTheme: parsed.soundTheme ?? (parsed.soundEffects === false ? 'off' : 'click'),
           soundVolume: parsed.soundVolume ?? 'medium',
           iconStyle: 'stock', // locked to stock app icons
@@ -536,7 +539,7 @@ export default function App() {
     const t = setInterval(() => setNightTick((n) => n + 1), 30000);
     return () => clearInterval(t);
   }, []);
-  const nightActive = isNightModeActive(settings.nightMode);
+  const nightActive = isNightActive(settings);
 
   // Ambient mode: after a few idle minutes on Home, drift into full-screen photography + clock
   const [ambientActive, setAmbientActive] = useState<boolean>(false);

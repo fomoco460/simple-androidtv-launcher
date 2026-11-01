@@ -3,6 +3,8 @@ import { BackgroundPreset } from '../types';
 import { soundService } from '../services/sound';
 import { useSpatialNav } from '../hooks/useSpatialNav';
 import { CLEAN_FRAME_WALLPAPERS } from '../data/cleanFrameWallpapers';
+import { SPACE_PHOTOS } from '../data/ambientPhotos';
+import { BackgroundView } from './BackgroundView';
 import {
   Image as ImageIcon,
   Sparkles,
@@ -22,35 +24,58 @@ interface WallpaperGalleryModalProps {
 
 const ambientIds = ['desert-stars', 'nordic-aurora', 'misty-pines', 'cyber-dusk', 'deep-space', 'sunset-dunes'];
 
+type Category = 'landscapes' | 'space' | 'themes' | 'custom';
+interface Tile {
+  preset: BackgroundPreset;
+  name: string;
+  desc: string;
+  thumb?: string;
+}
+
+const THEMES: Tile[] = [
+  { preset: 'desert-stars', name: 'Desert Stars', desc: 'Starry horizon over dunes' },
+  { preset: 'nordic-aurora', name: 'Nordic Aurora', desc: 'Northern lights, midnight sea' },
+  { preset: 'misty-pines', name: 'Misty Pines', desc: 'Alpine tree silhouettes' },
+  { preset: 'cyber-dusk', name: 'Cyber Dusk', desc: 'Neon vaporwave horizon' },
+  { preset: 'deep-space', name: 'Deep Space', desc: 'Nebula and stardust' },
+  { preset: 'sunset-dunes', name: 'Sunset Dunes', desc: 'Warm desert sunset' },
+];
+
+const CATEGORY_INFO: Record<Category, { label: string; blurb: string; icon: React.ComponentType<{ className?: string }> }> = {
+  landscapes: { label: 'Landscapes', blurb: 'Photography from the CleanFrame project (Unsplash)', icon: Layers },
+  space: { label: 'Space', blurb: 'NASA, ESA and CSA imagery: Artemis II, the ISS, Webb and Hubble', icon: Sparkles },
+  themes: { label: 'Themes', blurb: 'Soft gradient themes with a slow starfield', icon: Sparkles },
+  custom: { label: 'Custom', blurb: '', icon: Upload },
+};
+
 export const WallpaperGalleryModal: React.FC<WallpaperGalleryModalProps> = ({
   currentPreset,
   customUrl = '',
   onSelectWallpaper,
   onClose,
 }) => {
-  const [activeCategory, setActiveCategory] = useState<'cleanframe' | 'ambient' | 'custom'>(
-    () =>
-      ambientIds.includes(currentPreset as string)
-        ? 'ambient'
-        : CLEAN_FRAME_WALLPAPERS.some((w) => w.presetId === currentPreset)
-          ? 'cleanframe'
-          : currentPreset === 'custom'
-            ? 'custom'
-            : 'cleanframe',
+  const [activeCategory, setActiveCategory] = useState<Category>(() =>
+    ambientIds.includes(currentPreset as string)
+      ? 'themes'
+      : (currentPreset as string).startsWith('space-')
+        ? 'space'
+        : currentPreset === 'custom'
+          ? 'custom'
+          : 'landscapes',
   );
   const rootRef = useRef<HTMLDivElement | null>(null);
   const isNative = typeof window !== 'undefined' && !!(window as any).AndroidBridge?.isNative?.();
   const [customInputUrl, setCustomInputUrl] = useState<string>(customUrl || '');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const ambientPresets = [
-    { id: 'desert-stars', name: 'Desert Stars', desc: 'Deep starry horizon with ambient dunes', tone: 'dark' },
-    { id: 'nordic-aurora', name: 'Nordic Aurora', desc: 'Vibrant northern lights and midnight sea', tone: 'dark' },
-    { id: 'misty-pines', name: 'Misty Pines', desc: 'Atmospheric alpine mountain tree silhouettes', tone: 'dark' },
-    { id: 'cyber-dusk', name: 'Cyber Dusk', desc: 'Vaporwave dusk horizon with neon glow', tone: 'dark' },
-    { id: 'deep-space', name: 'Deep Space', desc: 'Nebula cosmic starfield and stardust', tone: 'dark' },
-    { id: 'sunset-dunes', name: 'Sunset Dunes', desc: 'Warm desert sunset with amber glow', tone: 'dark' },
-  ];
+  const tiles: Tile[] =
+    activeCategory === 'landscapes'
+      ? CLEAN_FRAME_WALLPAPERS.map((w) => ({ preset: w.presetId as BackgroundPreset, name: w.name, desc: w.description, thumb: w.thumb }))
+      : activeCategory === 'space'
+        ? SPACE_PHOTOS.map((p) => ({ preset: p.id as BackgroundPreset, name: p.name, desc: 'NASA', thumb: p.thumb }))
+        : activeCategory === 'themes'
+          ? THEMES
+          : [];
 
   // D-pad: arrows move between controls, Enter presses, Back closes.
   useSpatialNav({ containerRef: rootRef, onBack: onClose });
@@ -92,58 +117,36 @@ export const WallpaperGalleryModal: React.FC<WallpaperGalleryModalProps> = ({
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-bold tracking-tight">Wallpaper Gallery</h2>
                 <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-sky-500/20 text-sky-300 border border-sky-500/30 rounded-full">
-                  CleanFrame &amp; Ambient
+                  Home screen
                 </span>
               </div>
               <p className="text-xs text-zinc-400 mt-0.5">
-                Choose from CleanFrame's 15 photographic wallpapers, procedural ambient themes, or import your own.
+                Landscapes, NASA space photos, animated themes, or your own image.
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/10 text-xs font-semibold">
-              <button
-                onClick={() => {
-                  soundService.playMove();
-                  setActiveCategory('cleanframe');
-                }}
-                data-nav
-                className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
-                  activeCategory === 'cleanframe' ? 'bg-white text-slate-900 font-bold shadow' : 'text-zinc-400 hover:text-white'
-                }`}
-              >
-                <Layers className="w-3.5 h-3.5" />
-                CleanFrame (15)
-              </button>
-
-              <button
-                onClick={() => {
-                  soundService.playMove();
-                  setActiveCategory('ambient');
-                }}
-                data-nav
-                className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
-                  activeCategory === 'ambient' ? 'bg-white text-slate-900 font-bold shadow' : 'text-zinc-400 hover:text-white'
-                }`}
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                Ambient (6)
-              </button>
-
-              <button
-                onClick={() => {
-                  soundService.playMove();
-                  setActiveCategory('custom');
-                }}
-                data-nav
-                className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
-                  activeCategory === 'custom' ? 'bg-white text-slate-900 font-bold shadow' : 'text-zinc-400 hover:text-white'
-                }`}
-              >
-                <Upload className="w-3.5 h-3.5" />
-                Custom Import
-              </button>
+              {(Object.keys(CATEGORY_INFO) as Category[]).map((c) => {
+                const Icon = CATEGORY_INFO[c].icon;
+                return (
+                  <button
+                    key={c}
+                    data-nav
+                    onClick={() => {
+                      soundService.playMove();
+                      setActiveCategory(c);
+                    }}
+                    className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
+                      activeCategory === c ? 'bg-white text-slate-900 font-bold shadow' : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    {CATEGORY_INFO[c].label}
+                  </button>
+                );
+              })}
             </div>
 
             <button
@@ -162,126 +165,46 @@ export const WallpaperGalleryModal: React.FC<WallpaperGalleryModalProps> = ({
 
         {/* Modal Body */}
         <div className="flex-1 overflow-y-auto p-6 scroll-py-6 space-y-4">
-          {/* Category 1: CleanFrame 15 Wallpapers */}
-          {activeCategory === 'cleanframe' && (
+          {activeCategory !== 'custom' && (
             <div>
               <div className="flex items-center justify-between pb-3 text-xs text-zinc-400 border-b border-white/5">
-                <span>
-                  Official photography wallpapers from <strong className="text-white">nthnclrk/CleanFrame</strong> (offline TV ready)
-                </span>
-                <span className="text-[11px] font-mono text-sky-400">15 Wallpapers available</span>
+                <span>{CATEGORY_INFO[activeCategory].blurb}</span>
+                <span className="text-[11px] font-mono text-sky-400">{tiles.length} wallpapers</span>
               </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 pt-3">
-                {CLEAN_FRAME_WALLPAPERS.map((wp) => {
-                  const isSelected = currentPreset === wp.presetId;
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pt-3">
+                {tiles.map((t) => {
+                  const isSelected = currentPreset === t.preset;
                   return (
                     <button
-                      key={wp.id}
+                      key={t.preset}
                       onClick={() => {
                         soundService.playSelect();
-                        onSelectWallpaper(wp.presetId as BackgroundPreset);
+                        onSelectWallpaper(t.preset);
                         onClose();
                       }}
                       data-nav
                       {...(isSelected ? { 'data-nav-initial': true } : {})}
                       className={`group relative flex flex-col rounded-2xl overflow-hidden border text-left transition-all duration-200 cursor-pointer ${
-                        isSelected
-                          ? 'border-white ring-2 ring-white shadow-2xl z-10'
-                          : 'border-white/10 hover:border-white/40'
+                        isSelected ? 'border-white ring-2 ring-white shadow-2xl z-10' : 'border-white/10 hover:border-white/40'
                       }`}
                     >
                       <div className="relative aspect-video w-full overflow-hidden bg-black">
-                        <img
-                          src={wp.thumb}
-                          alt={wp.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          loading="lazy"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                        {t.thumb ? (
+                          <img src={t.thumb} alt={t.name} className="w-full h-full object-cover" loading="lazy" />
+                        ) : (
+                          <div className="absolute inset-0" style={{ filter: 'brightness(2.6) saturate(1.6)' }}>
+                            <BackgroundView preset={t.preset} still />
+                          </div>
+                        )}
                         {isSelected && (
                           <div className="absolute top-2 right-2 p-1 rounded-full bg-white text-slate-900 shadow-lg">
                             <Check className="w-3.5 h-3.5 stroke-[3]" />
                           </div>
                         )}
                       </div>
-
-                      <div className="p-2.5 bg-zinc-900/90 flex-1 flex flex-col justify-between">
-                        <div>
-                          <div className="font-bold text-xs text-white group-hover:text-sky-300 transition-colors">
-                            {wp.name}
-                          </div>
-                          <div className="text-[10px] text-zinc-400 line-clamp-1 mt-0.5">
-                            {wp.description}
-                          </div>
-                        </div>
-
-                        <div className="mt-2 flex items-center justify-between text-[9px] uppercase tracking-wider font-semibold text-zinc-500">
-                          <span>{wp.tone} tone</span>
-                          <span className={isSelected ? 'text-emerald-400' : 'text-zinc-500'}>
-                            {isSelected ? 'Active' : 'Select'}
-                          </span>
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Category 2: Ambient Themes */}
-          {activeCategory === 'ambient' && (
-            <div>
-              <div className="flex items-center justify-between pb-3 text-xs text-zinc-400 border-b border-white/5">
-                <span>Minimalist procedural ambient themes with animated starfields and horizons</span>
-                <span className="text-[11px] font-mono text-sky-400">6 Themes</span>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-3">
-                {ambientPresets.map((theme) => {
-                  const isSelected = currentPreset === theme.id;
-                  return (
-                    <button
-                      key={theme.id}
-                      onClick={() => {
-                        soundService.playSelect();
-                        onSelectWallpaper(theme.id as BackgroundPreset);
-                        onClose();
-                      }}
-                      data-nav
-                      {...(isSelected ? { 'data-nav-initial': true } : {})}
-                      className={`group relative flex flex-col rounded-2xl overflow-hidden border text-left transition-all duration-200 cursor-pointer ${
-                        isSelected
-                          ? 'border-white ring-2 ring-white shadow-2xl z-10'
-                          : 'border-white/10 hover:border-white/40'
-                      }`}
-                    >
-                      <div className="relative aspect-video w-full overflow-hidden bg-gradient-to-br from-slate-900 via-indigo-950 to-black flex items-center justify-center">
-                        <Sparkles className="w-8 h-8 text-white/30 group-hover:scale-110 transition-transform" />
-                        {isSelected && (
-                          <div className="absolute top-2 right-2 p-1 rounded-full bg-white text-slate-900 shadow-lg">
-                            <Check className="w-3.5 h-3.5 stroke-[3]" />
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="p-3 bg-zinc-900/90 flex-1 flex flex-col justify-between">
-                        <div>
-                          <div className="font-bold text-sm text-white group-hover:text-sky-300 transition-colors">
-                            {theme.name}
-                          </div>
-                          <div className="text-xs text-zinc-400 mt-1">
-                            {theme.desc}
-                          </div>
-                        </div>
-
-                        <div className="mt-3 flex items-center justify-between text-[10px] uppercase tracking-wider font-semibold">
-                          <span className="text-zinc-500">Ambient Engine</span>
-                          <span className={isSelected ? 'text-emerald-400' : 'text-zinc-400'}>
-                            {isSelected ? 'Active' : 'Apply'}
-                          </span>
-                        </div>
+                      <div className="p-2.5 bg-zinc-900/90">
+                        <div className="font-bold text-xs md:text-sm text-white truncate">{t.name}</div>
+                        <div className="text-[10px] md:text-xs text-zinc-400 line-clamp-1 mt-0.5">{t.desc}</div>
                       </div>
                     </button>
                   );
@@ -361,7 +284,7 @@ export const WallpaperGalleryModal: React.FC<WallpaperGalleryModalProps> = ({
 
         {/* Footer */}
         <div className="px-6 py-3 border-t border-white/10 bg-zinc-950 flex items-center justify-between text-xs text-zinc-500 shrink-0">
-          <span>CleanFrame Wallpapers • Photographs from Unsplash &amp; CleanFrame project</span>
+          <span>Landscapes: CleanFrame project / Unsplash · Space: NASA, ESA, CSA, STScI (credits in the README)</span>
         </div>
       </div>
     </div>

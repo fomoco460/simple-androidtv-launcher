@@ -333,11 +333,10 @@ export const HomeLauncher: React.FC<HomeLauncherProps> = ({
   }, [focusArea]);
 
   // Style class getters based on user settings
-  const materialClass = 'material-soft';
   const focusClass = 'focus-border';
 
   // Fixed TV safe-area margin so content never touches the screen edges
-  const safeZonePadding = isMiniPreview ? 'p-4' : 'px-10 py-6 md:px-16 md:py-8';
+  const safeZonePadding = 'px-10 py-6 md:px-16 md:py-8';
 
   // Helper to render weather icon
   const getWeatherIcon = (type?: string, isMini?: boolean) => {
@@ -374,7 +373,7 @@ export const HomeLauncher: React.FC<HomeLauncherProps> = ({
   return (
     <div
       className={`relative w-full h-full flex flex-col justify-between overflow-hidden select-none transition-all duration-300 ${
-        isMiniPreview ? 'rounded-2xl shadow-2xl border border-white/10' : ''
+        ''
       }`}
       style={{
         fontFamily:
@@ -399,16 +398,14 @@ export const HomeLauncher: React.FC<HomeLauncherProps> = ({
             <div className="flex items-baseline gap-3 md:gap-4">
               <span
                 className={`font-extrabold tracking-tight text-white drop-shadow-lg tabular-nums leading-none ${
-                  isMiniPreview
-                    ? 'text-lg'
-                    : settings.clockStyle === 'large'
+                  settings.clockStyle === 'large'
                     ? 'text-5xl md:text-7xl lg:text-8xl'
                     : 'text-3xl md:text-5xl lg:text-6xl'
                 }`}
               >
                 {currentTime}
               </span>
-              {settings.showDate && !isMiniPreview && settings.clockStyle !== 'minimal' && (
+              {settings.showDate && settings.clockStyle !== 'minimal' && (
                 <span className="text-sm md:text-base font-semibold text-white/70 tracking-wider">
                   {currentDate}
                 </span>
@@ -422,11 +419,11 @@ export const HomeLauncher: React.FC<HomeLauncherProps> = ({
             {settings.showWeather !== false && settings.clockStyle !== 'minimal' && (weather || settings.weatherCity) && (
               <div
                 className={`flex flex-col items-start select-none ${
-                  isMiniPreview ? 'mt-1 space-y-0.5' : 'mt-1.5 md:mt-2 space-y-0.5 md:space-y-1'
+                  'mt-1.5 md:mt-2 space-y-0.5 md:space-y-1'
                 }`}
               >
                 {/* Weather Row 1: Hi Lo under the Time */}
-                {weather && weather.high !== undefined && weather.low !== undefined && !isMiniPreview ? (
+                {weather && weather.high !== undefined && weather.low !== undefined ? (
                   <div className="flex items-center gap-2 text-xs md:text-sm font-semibold text-white/85 tracking-wide tabular-nums drop-shadow-md">
                     <span className="text-amber-300 font-bold">H: {weather.high}°</span>
                     <span className="text-sky-300 font-bold">L: {weather.low}°</span>
@@ -443,17 +440,15 @@ export const HomeLauncher: React.FC<HomeLauncherProps> = ({
 
                 {/* Weather Row 2: Weather icon with current temp */}
                 <div
-                  className={`flex items-center gap-2 text-white drop-shadow-md ${
-                    isMiniPreview ? 'text-[10px]' : 'text-xs md:text-sm'
-                  }`}
+                  className="flex items-center gap-2 text-white drop-shadow-md text-xs md:text-sm"
                 >
                   {weather ? (
                     <>
-                      {getWeatherIcon(weather.iconType, isMiniPreview)}
+                      {getWeatherIcon(weather.iconType, false)}
                       <span className="font-bold text-white tabular-nums tracking-tight">
                         {weather.temperature}°{settings.tempUnit || 'F'}
                       </span>
-                      {weather.condition && !isMiniPreview && (
+                      {weather.condition && (
                         <span className="text-white/65 text-xs md:text-sm font-medium capitalize">
                           {weather.condition}
                         </span>
@@ -520,49 +515,39 @@ export const HomeLauncher: React.FC<HomeLauncherProps> = ({
           <div
             ref={dockContainerRef}
             className={`overflow-x-auto no-scrollbar scroll-smooth flex items-center ${
-              isMiniPreview
-                ? `max-w-[94vw] px-3 py-2 rounded-xl ${materialClass}`
-                : isDockOverflowing
+              isDockOverflowing
                 ? 'w-full [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]'
                 : 'max-w-[94vw]'
             }`}
           >
             <div
               className={`flex items-center gap-3 md:gap-5 overflow-visible ${
-                isMiniPreview ? 'py-2 px-4' : 'py-6'
+                'py-6'
               } ${isDockOverflowing ? 'w-max justify-start' : 'min-w-full justify-center px-4 md:px-6'}`}
               style={
-                isDockOverflowing && !isMiniPreview
+                isDockOverflowing
                   ? { paddingLeft: 'calc(50% - 3.5rem)', paddingRight: 'calc(50% - 3.5rem)' }
                   : undefined
               }
             >
               {dockApps.map((app, index) => {
                 const isFocused =
-                  focusArea === 'dock' && focusedDockIndex === index && !isMiniPreview;
+                  focusArea === 'dock' && focusedDockIndex === index;
 
                 const isIconsOnly = settings.apps === 'icons-only';
                 const isTextOnly = settings.apps === 'text-only';
 
-                const buttonSizeClass = isMiniPreview
-                  ? isIconsOnly
-                    ? 'w-8 h-8 p-1'
-                    : 'w-10 h-10 p-1'
-                  : isIconsOnly
+                const buttonSizeClass = isIconsOnly
                   ? 'w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 p-2.5 md:p-3'
                   : isTextOnly
                   ? 'px-5 py-3 md:px-6 md:py-3.5'
                   : 'w-18 h-22 md:w-22 md:h-26 lg:w-26 lg:h-30 p-2.5 md:p-3';
 
-                const iconContainerSize = isMiniPreview
-                  ? 'w-4 h-4'
-                  : isIconsOnly
+                const iconContainerSize = isIconsOnly
                   ? 'w-11 h-11 md:w-14 md:h-14 lg:w-16 lg:h-16'
                   : 'w-9 h-9 md:w-12 md:h-12 lg:w-14 lg:h-14';
 
-                const iconSize = isMiniPreview
-                  ? 'w-3.5 h-3.5'
-                  : isIconsOnly
+                const iconSize = isIconsOnly
                   ? 'w-10 h-10 md:w-13 md:h-13 lg:w-15 lg:h-15'
                   : 'w-8 h-8 md:w-11 md:h-11 lg:w-13 lg:h-13';
 
@@ -610,9 +595,7 @@ export const HomeLauncher: React.FC<HomeLauncherProps> = ({
                     {!isIconsOnly && (
                       <span
                         className={`tracking-normal font-semibold truncate max-w-full text-center transition-colors duration-150 ${
-                          isMiniPreview
-                            ? 'text-[8px] mt-0.5'
-                            : 'text-xs md:text-sm lg:text-base mt-1.5 md:mt-2'
+                          'text-xs md:text-sm lg:text-base mt-1.5 md:mt-2'
                         } ${
                           isFocused
                             ? 'text-white'

@@ -24,6 +24,7 @@ export type BackgroundPreset =
   | 'deep-space'
   | 'sunset-dunes'
   | CleanFramePresetId
+  | `space-${string}`
   | 'custom';
 
 
@@ -59,8 +60,11 @@ export interface LauncherSettings {
   homeControls: HomeControlsPreset;
   uiScale?: UiScalePreset; // TV 10-foot scale for 4K TV / living room viewing distance
   clockStyle: ClockStyle; // standard | large | minimal (time only)
-  nightMode: NightMode; // dim and warm the launcher late at night
-  ambientPhotos: AmbientPhotoSet; // which photo set Ambient Mode uses
+  nightMode: NightMode; // off | scheduled (auto) | always
+  ambientDayPhotos?: string[]; // photo ids Ambient Mode shows by day (undefined = all)
+  ambientNightPhotos?: string[]; // photo ids Ambient Mode shows at night (undefined = all dark photos)
+  nightStart: number; // Night Mode start, minutes after midnight (default 22:00)
+  nightEnd: number; // Night Mode end, minutes after midnight (default 06:00)
   ambientMinutes: number; // idle minutes on Home before Ambient Mode starts (0 = off)
   soundTheme: SoundTheme;
   soundVolume: SoundVolume;
@@ -92,4 +96,3 @@ export interface AppItem {
 
 export type ClockStyle = 'standard' | 'large' | 'minimal';
 export type NightMode = 'off' | 'auto' | 'always';
-export type AmbientPhotoSet = 'smart' | 'cleanframe' | 'space';

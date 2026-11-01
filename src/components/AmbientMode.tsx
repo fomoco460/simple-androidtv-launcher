@@ -1,20 +1,24 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { LauncherSettings } from '../types';
-import { AMBIENT_PHOTOS, AmbientPhoto } from '../data/ambientPhotos';
-import { getDaypart, Daypart } from '../services/daypart';
+import { AMBIENT_PHOTOS, ALL_PHOTO_IDS, DEFAULT_NIGHT_IDS } from '../data/ambientPhotos';
+import { isNightActive } from '../services/daypart';
 import { pushKeyOwner } from '../services/keyGate';
 import { weatherService, WeatherData } from '../services/weather';
 
 interface AmbientModeProps {
   settings: LauncherSettings;
-  onWake: () => void;
+  onWake?: () => void;
+  /** Settings-screen preview: sits inside its parent, ignores the remote. */
+  preview?: boolean;
+  /** Preview only: show the night look regardless of the clock. */
+  forceNight?: boolean;
 }
 
 const SLIDE_MS = 18000;
 
-// Smart Ambient: the photos get dimmer as the evening goes on
-const BRIGHTNESS: Record<Daypart, number> = { day: 0.6, evening: 0.5, night: 0.35 };
-const TEXT_ALPHA: Record<Daypart, number> = { day: 0.55, evening: 0.45, night: 0.32 };
+// At night the photos and the clock get dimmer
+const BRIGHTNESS = { day: 0.6, night: 0.35 };
+const TEXT_ALPHA = { day: 0.55, night: 0.32 };
 
 const useClock = (clockFormat: LauncherSettings['clockFormat']) => {
   const [now, setNow] = useState(() => new Date());
@@ -57,21 +61,21 @@ function shuffled<T>(list: T[]): T[] {
  * "Smart": uses the photo set you chose, gets dimmer through the evening, and shows only dark
  * photos after dark. Any remote button wakes it; that first press is swallowed.
  */
-export const AmbientMode: React.FC<AmbientModeProps> = ({ settings, onWake }) => {
+export const AmbientMode: React.FC<AmbientModeProps> = ({ settings, onWake, preview = false, forceNight }) => {
   const { now, time, date } = useClock(settings.clockFormat);
-  const daypart = getDaypart(settings.nightMode, now);
+  const night = forceNight ?? isNightActive(settings, now);
+  const daypart = night ? 'night' : 'day';
   const [broken, setBroken] = useState<Set<string>>(() => new Set());
 
+  const dayKey = (settings.ambientDayPhotos ?? ALL_PHOTO_IDS).join(',');
+  const nightKey = (settings.ambientNightPhotos ?? DEFAULT_NIGHT_IDS).join(',');
   const pool = useMemo(() => {
-    const wanted = settings.ambientPhotos;
-    let list: AmbientPhoto[] = AMBIENT_PHOTOS.filter((p) => wanted === 'smart' || p.set === wanted);
-    if (list.length === 0) list = AMBIENT_PHOTOS; // chosen set not installed: use whatever exists
-    const darkOnly = daypart !== 'day';
-    const toned = darkOnly ? list.filter((p) => p.tone === 'dark') : list;
-    const base = (toned.length > 0 ? toned : list).filter((p) => !broken.has(p.id));
-    return shuffled(base.length > 0 ? base : list);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [settings.ambientPhotos, daypart === 'day', broken]);
+    const ids = new Set((night ? nightKey : dayKey).split(','));
+    let list = AMBIENT_PHOTOS.filter((p) => ids.has(p.id));
+    if (list.length === 0) list = AMBIENT_PHOTOS; // nothing picked: fall back to everything
+    const ok = list.filter((p) => !broken.has(p.id));
+    return shuffled(ok.length > 0 ? ok : list);
+  }, [night, dayKey, nightKey, broken]);
 
   const [index, setIndex] = useState(0);
   const safeIndex = pool.length > 0 ? index % pool.length : 0;
@@ -95,6 +99,7 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ settings, onWake }) =>
 
   // Any input wakes ambient mode and is swallowed (the key gate runs before every other listener).
   useEffect(() => {
+    if (preview || !onWake) return;
     let armed = false;
     const arm = window.setTimeout(() => (armed = true), 400); // ignore the key release that started it
     const wake = (e: Event) => {
@@ -116,7 +121,7 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ settings, onWake }) =>
       window.clearTimeout(arm);
       removeOwner();
     };
-  }, [onWake]);
+  }, [onWake, preview]);
 
   const prev = pool.length > 0 ? (safeIndex - 1 + pool.length) % pool.length : 0;
   const next = pool.length > 0 ? (safeIndex + 1) % pool.length : 0;
@@ -131,7 +136,7 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ settings, onWake }) =>
   const showExtras = style !== 'minimal';
 
   return (
-    <div className="fixed inset-0 z-[80] bg-black overflow-hidden select-none animate-ambientIn">
+    <div className={`${preview ? 'absolute inset-0' : 'fixed inset-0 z-[80]'} bg-black overflow-hidden select-none animate-ambientIn`}>
       {pool.map((p, i) => {
         const active = i === safeIndex;
         return (
