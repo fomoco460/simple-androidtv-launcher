@@ -16,6 +16,8 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.content.res.Configuration;
 import android.util.DisplayMetrics;
 import android.util.Base64;
@@ -66,6 +68,19 @@ public class MainActivity extends Activity {
     private static final String TAG = "CleanLauncherTV";
     private WebView webView;
     private volatile boolean keyboardOpen = false;
+    // Long-press OK: a tap fires "Enter" on key-up, a hold fires 'chromecast-select-long' after ~550ms
+    private final Handler keyHandler = new Handler(Looper.getMainLooper());
+    private boolean selectDown = false;
+    private boolean selectLongFired = false;
+    private final Runnable selectLongRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (!selectDown || webView == null) return;
+            selectLongFired = true;
+            webView.evaluateJavascript(
+                "window.dispatchEvent(new CustomEvent('chromecast-select-long'));", null);
+        }
+    };
     private LocalAssetServer localServer;
     private static final int DEFAULT_PORT = 8989;
     private static final long APP_SCAN_TTL_MS = 60_000L;
@@ -83,6 +98,33 @@ public class MainActivity extends Activity {
 
         public AndroidBridge(Context context) {
             mContext = context;
+        }
+
+        @JavascriptInterface
+        public void openAppInfo(final String packageName) {
+            if (packageName == null || !packageName.matches("[A-Za-z0-9_.]+")) return;
+            try {
+                Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                intent.setData(Uri.parse("package:" + packageName));
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                mContext.startActivity(intent);
+            } catch (Exception e) {
+                Log.w(TAG, "Could not open app info: " + e.getMessage());
+            }
+        }
+
+        @JavascriptInterface
+        public void uninstallApp(final String packageName) {
+            if (packageName == null || !packageName.matches("[A-Za-z0-9_.]+")) return;
+            if (packageName.equals(mContext.getPackageName())) return;
+            try {
+                Intent intent = new Intent(Intent.ACTION_DELETE);
+                intent.setData(Uri.parse("package:" + packageName));
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                mContext.startActivity(intent);
+            } catch (Exception e) {
+                Log.w(TAG, "Could not start uninstall: " + e.getMessage());
+            }
         }
 
         @JavascriptInterface
@@ -1032,6 +1074,31 @@ public class MainActivity extends Activity {
         // While the on-screen keyboard is open, the page and keyboard get the keys natively.
         if (keyboardOpen) {
             return super.dispatchKeyEvent(event);
+        }
+
+        // Select / OK: tap = Enter on release, hold = long-press event (app options menu)
+        if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER
+                || keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER) {
+            if (action == KeyEvent.ACTION_DOWN) {
+                if (event.getRepeatCount() == 0) {
+                    keyHandler.removeCallbacks(selectLongRunnable);
+                    selectDown = true;
+                    selectLongFired = false;
+                    keyHandler.postDelayed(selectLongRunnable, 550);
+                }
+            } else if (action == KeyEvent.ACTION_UP) {
+                keyHandler.removeCallbacks(selectLongRunnable);
+                boolean wasLong = selectLongFired;
+                boolean wasDown = selectDown;
+                selectDown = false;
+                selectLongFired = false;
+                if (wasDown && !wasLong && webView != null) {
+                    webView.evaluateJavascript(
+                        "window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', " +
+                        "keyCode: 13, which: 13, bubbles: true, cancelable: true }));", null);
+                }
+            }
+            return true;
         }
 
         // 3. Handle D-pad and action keys

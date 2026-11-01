@@ -9,6 +9,7 @@ import { AppLauncherModal } from './components/AppLauncherModal';
 import { LocationModal } from './components/LocationModal';
 import { InstallApkModal } from './components/InstallApkModal';
 import { WallpaperGalleryModal } from './components/WallpaperGalleryModal';
+import { AppContextMenu, AppMenuContext } from './components/AppContextMenu';
 import { AppBackdropModal } from './components/AppBackdropModal';
 import { VirtualRemote } from './components/VirtualRemote';
 import { soundService } from './services/sound';
@@ -543,6 +544,18 @@ export default function App() {
     );
   };
 
+  const [appMenu, setAppMenu] = useState<{ appId: string; context: AppMenuContext } | null>(null);
+  const menuApp = appMenu ? apps.find((a) => a.id === appMenu.appId) || null : null;
+  const packageOf = (app: AppItem): string | null => {
+    const bridge = (window as any).AndroidBridge;
+    if (!bridge?.isNative?.()) return null;
+    const m = app.intentUrl?.match(/package=([^;]+)/);
+    return m ? m[1] : null;
+  };
+  const handleRenameApp = (appId: string, name: string) => {
+    setApps((prev) => prev.map((a) => (a.id === appId ? { ...a, name } : a)));
+  };
+
   const handleAddCustomApp = (newApp: AppItem) => {
     setApps((prev) => [newApp, ...prev]);
   };
@@ -569,6 +582,7 @@ export default function App() {
     showWallpaperGallery ||
     showBackdropModal ||
     !!activeModal ||
+    !!appMenu ||
     !!launchingApp;
 
   return (
@@ -606,6 +620,7 @@ export default function App() {
           apps={apps}
           onOpenView={handleOpenView}
           onLaunchApp={handleLaunchApp}
+          onAppMenu={(app) => setAppMenu({ appId: app.id, context: 'home' })}
           isMiniPreview={false}
           isModalOpen={isAnyModalActive}
         />
@@ -631,6 +646,7 @@ export default function App() {
           }}
           onToggleDockPin={handleToggleDockPin}
           onMoveDockApp={handleMoveDockApp}
+          onAppMenu={(app) => setAppMenu({ appId: app.id, context: 'all-apps' })}
           onAddCustomApp={handleAddCustomApp}
           onOpenBackdropModal={(appId) => {
             setBackdropModalAppId(appId);
@@ -691,6 +707,33 @@ export default function App() {
           onClose={() => setLaunchingApp(null)}
         />
       )}
+
+      {menuApp && appMenu && (() => {
+        const dock = apps.filter((a) => a.inDock);
+        const di = dock.findIndex((a) => a.id === menuApp.id);
+        const pkg = packageOf(menuApp);
+        const bridge = (window as any).AndroidBridge;
+        return (
+          <AppContextMenu
+            key={menuApp.id}
+            app={menuApp}
+            context={appMenu.context}
+            canMoveLeft={di > 0}
+            canMoveRight={di >= 0 && di < dock.length - 1}
+            packageName={pkg}
+            onMove={(d) => handleMoveDockApp(menuApp.id, d)}
+            onTogglePin={() => handleToggleDockPin(menuApp.id)}
+            onRename={(n) => handleRenameApp(menuApp.id, n)}
+            onBackdrop={() => {
+              setBackdropModalAppId(menuApp.id);
+              setShowBackdropModal(true);
+            }}
+            onAppInfo={() => pkg && bridge?.openAppInfo?.(pkg)}
+            onUninstall={() => pkg && bridge?.uninstallApp?.(pkg)}
+            onClose={() => setAppMenu(null)}
+          />
+        );
+      })()}
 
       {/* Floating Virtual TV Remote Simulator (for desktop/tablet testing) */}
       {!isTvOrNative && (

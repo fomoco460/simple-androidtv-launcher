@@ -26,6 +26,7 @@ interface AllAppsModalProps {
   onAddCustomApp: (newApp: AppItem) => void;
   onClose: () => void;
   onOpenBackdropModal?: (appId: string) => void;
+  onAppMenu?: (app: AppItem) => void;
 }
 
 type NavZone = 'top' | 'categories' | 'grid' | 'reorganize-dock' | 'reorganize-unpinned' | 'footer';
@@ -39,6 +40,7 @@ export const AllAppsModal: React.FC<AllAppsModalProps> = ({
   onAddCustomApp,
   onClose,
   onOpenBackdropModal,
+  onAppMenu,
 }) => {
   const [modalTab, setModalTab] = useState<'browse' | 'reorganize'>('browse');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -77,6 +79,25 @@ export const AllAppsModal: React.FC<AllAppsModalProps> = ({
 
   const dockApps = apps.filter((a) => a.inDock);
   const unpinnedApps = apps.filter((a) => !a.inDock);
+
+  // Long-press OK (or the Menu key) on a tile opens the app options menu
+  useEffect(() => {
+    const open = () => {
+      if (modalTab !== 'browse' || focusZone !== 'grid' || showAddCustom) return;
+      const app = filteredApps[gridFocusIndex];
+      if (app) onAppMenu?.(app);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (document.activeElement instanceof HTMLInputElement) return;
+      if (e.key === 'ContextMenu' || e.key.toLowerCase() === 'm') open();
+    };
+    window.addEventListener('chromecast-select-long', open);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('chromecast-select-long', open);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [modalTab, focusZone, showAddCustom, filteredApps, gridFocusIndex, onAppMenu]);
 
   // Auto-scroll when remote moves through app grid
   useEffect(() => {

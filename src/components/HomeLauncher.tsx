@@ -24,6 +24,7 @@ interface HomeLauncherProps {
   apps: AppItem[];
   onOpenView: (view: 'inputs' | 'all-apps' | 'appearance' | 'install-apk' | 'location') => void;
   onLaunchApp: (app: AppItem) => void;
+  onAppMenu?: (app: AppItem) => void;
   isMiniPreview?: boolean;
   isModalOpen?: boolean;
   focusedZoneOverride?: 'dock' | 'top';
@@ -35,6 +36,7 @@ export const HomeLauncher: React.FC<HomeLauncherProps> = ({
   apps,
   onOpenView,
   onLaunchApp,
+  onAppMenu,
   isMiniPreview = false,
   isModalOpen = false,
 }) => {
@@ -79,6 +81,41 @@ export const HomeLauncher: React.FC<HomeLauncherProps> = ({
 
   const dockApps = apps.filter((a) => a.inDock);
   const isDockOverflowing = dockApps.length > 6;
+
+  // Keep focus on the same app when its position changes (Move left / right from the menu)
+  const focusedAppIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    focusedAppIdRef.current = dockApps[focusedDockIndex]?.id ?? null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusedDockIndex]);
+  const dockOrderKey = dockApps.map((a) => a.id).join('|');
+  useEffect(() => {
+    const id = focusedAppIdRef.current;
+    if (!id) return;
+    const idx = dockApps.findIndex((a) => a.id === id);
+    if (idx >= 0 && idx !== focusedDockIndex) setFocusedDockIndex(idx);
+    else if (idx < 0 && focusedDockIndex >= dockApps.length) setFocusedDockIndex(Math.max(0, dockApps.length - 1));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dockOrderKey]);
+
+  // Long-press OK (or Menu key) on the focused app opens its options menu
+  useEffect(() => {
+    if (isMiniPreview || isModalOpen) return;
+    const open = () => {
+      if (focusArea !== 'dock') return;
+      const app = dockApps[focusedDockIndex];
+      if (app) onAppMenu?.(app);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ContextMenu' || e.key.toLowerCase() === 'm') open();
+    };
+    window.addEventListener('chromecast-select-long', open);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('chromecast-select-long', open);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [isMiniPreview, isModalOpen, focusArea, focusedDockIndex, dockApps, onAppMenu]);
 
   // Auto-scroll dock horizontally when remote moves focus across dock apps
   useEffect(() => {
@@ -217,7 +254,7 @@ export const HomeLauncher: React.FC<HomeLauncherProps> = ({
         e.preventDefault();
         soundService.playMove();
         if (focusArea === 'dock') {
-          setFocusedDockIndex((prev) => Math.min(dockApps.length - 1, prev + 1));
+          setFocusedDockIndex((prev) => (prev + 1 >= dockApps.length ? 0 : prev + 1));
         } else {
           setFocusedTopIndex((prev) => Math.min(topNavItems.length - 1, prev + 1));
         }
@@ -225,7 +262,7 @@ export const HomeLauncher: React.FC<HomeLauncherProps> = ({
         e.preventDefault();
         soundService.playMove();
         if (focusArea === 'dock') {
-          setFocusedDockIndex((prev) => Math.max(0, prev - 1));
+          setFocusedDockIndex((prev) => (prev - 1 < 0 ? Math.max(0, dockApps.length - 1) : prev - 1));
         } else {
           setFocusedTopIndex((prev) => Math.max(0, prev - 1));
         }
@@ -505,20 +542,23 @@ export const HomeLauncher: React.FC<HomeLauncherProps> = ({
         <div className="w-full flex flex-col items-center pb-2 md:pb-4 max-w-full overflow-hidden">
           <div
             ref={dockContainerRef}
-            className={`max-w-[94vw] overflow-x-auto no-scrollbar scroll-smooth flex items-center ${
+            className={`overflow-x-auto no-scrollbar scroll-smooth flex items-center ${
               isMiniPreview
-                ? `px-3 py-2 rounded-xl ${materialClass}`
-                : settings.layout === 'compact'
-                ? `px-4 py-2.5 rounded-2xl ${materialClass} shadow-xl`
-                : settings.layout === 'grid'
-                ? `grid grid-cols-6 gap-3.5 md:gap-4 p-5 md:p-6 rounded-3xl ${materialClass} shadow-2xl`
-                : `px-4 md:px-6 py-3.5 md:py-4 rounded-2xl md:rounded-3xl ${materialClass} shadow-2xl`
+                ? `max-w-[94vw] px-3 py-2 rounded-xl ${materialClass}`
+                : isDockOverflowing
+                ? 'w-full [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]'
+                : 'max-w-[94vw]'
             }`}
           >
             <div
-              className={`flex items-center gap-3 md:gap-4 overflow-visible py-2 px-4 md:px-6 ${
-                isDockOverflowing ? 'w-max justify-start' : 'min-w-full justify-center'
-              }`}
+              className={`flex items-center gap-3 md:gap-5 overflow-visible ${
+                isMiniPreview ? 'py-2 px-4' : 'py-6'
+              } ${isDockOverflowing ? 'w-max justify-start' : 'min-w-full justify-center px-4 md:px-6'}`}
+              style={
+                isDockOverflowing && !isMiniPreview
+                  ? { paddingLeft: 'calc(50% - 3.5rem)', paddingRight: 'calc(50% - 3.5rem)' }
+                  : undefined
+              }
             >
               {dockApps.map((app, index) => {
                 const IconComponent = BrandIcons[app.iconType] || BrandIcons.generic;
@@ -571,7 +611,7 @@ export const HomeLauncher: React.FC<HomeLauncherProps> = ({
                     }}
                     className={`shrink-0 relative flex flex-col items-center justify-center cursor-pointer rounded-2xl md:rounded-3xl outline-none focus:outline-none focus-visible:outline-none focus:ring-0 transition-[transform,background-color,border-color,box-shadow,color] duration-150 ease-out transform-gpu origin-center ${buttonSizeClass} ${
                       isFocused
-                        ? `${focusClass} z-10`
+                        ? `${focusClass} z-10 ${isDockOverflowing ? 'scale-110' : ''}`
                         : 'bg-white/[0.06] hover:bg-white/[0.14] border border-white/[0.08] text-white/80'
                     }`}
                   >
