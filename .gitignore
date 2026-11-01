@@ -19,3 +19,4 @@ release/
 *.jks
 *.idsig
 *.apk
+__pycache__/

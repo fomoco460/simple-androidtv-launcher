@@ -399,12 +399,16 @@ export const HomeLauncher: React.FC<HomeLauncherProps> = ({
             <div className="flex items-baseline gap-3 md:gap-4">
               <span
                 className={`font-extrabold tracking-tight text-white drop-shadow-lg tabular-nums leading-none ${
-                  isMiniPreview ? 'text-lg' : 'text-3xl md:text-5xl lg:text-6xl'
+                  isMiniPreview
+                    ? 'text-lg'
+                    : settings.clockStyle === 'large'
+                    ? 'text-5xl md:text-7xl lg:text-8xl'
+                    : 'text-3xl md:text-5xl lg:text-6xl'
                 }`}
               >
                 {currentTime}
               </span>
-              {settings.showDate && !isMiniPreview && (
+              {settings.showDate && !isMiniPreview && settings.clockStyle !== 'minimal' && (
                 <span className="text-sm md:text-base font-semibold text-white/70 tracking-wider">
                   {currentDate}
                 </span>
@@ -415,7 +419,7 @@ export const HomeLauncher: React.FC<HomeLauncherProps> = ({
                 Row 1: Hi Lo under Time
                 Row 2: Weather icon with current temp
             */}
-            {settings.showWeather !== false && (weather || settings.weatherCity) && (
+            {settings.showWeather !== false && settings.clockStyle !== 'minimal' && (weather || settings.weatherCity) && (
               <div
                 className={`flex flex-col items-start select-none ${
                   isMiniPreview ? 'mt-1 space-y-0.5' : 'mt-1.5 md:mt-2 space-y-0.5 md:space-y-1'

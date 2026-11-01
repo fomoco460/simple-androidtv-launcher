@@ -9,6 +9,7 @@ import { LocationModal } from './components/LocationModal';
 import { InstallApkModal } from './components/InstallApkModal';
 import { WallpaperGalleryModal } from './components/WallpaperGalleryModal';
 import { AmbientMode } from './components/AmbientMode';
+import { isNightModeActive } from './services/daypart';
 import { AppContextMenu, AppMenuContext } from './components/AppContextMenu';
 import { AppBackdropModal } from './components/AppBackdropModal';
 import { soundService } from './services/sound';
@@ -30,6 +31,9 @@ const DEFAULT_SETTINGS: LauncherSettings = {
   font: 'Manrope',
   homeControls: 'both',
   uiScale: 'auto',
+  clockStyle: 'standard',
+  nightMode: 'auto',
+  ambientPhotos: 'smart',
   ambientMinutes: 5,
   soundTheme: 'click',
   soundVolume: 'medium',
@@ -122,24 +126,12 @@ export default function App() {
           return app;
         });
 
-        // Ensure TiviMate and Xfinity are included if not present in saved apps
-        if (!upgraded.some((a) => a.id === 'tivimate' || a.name.toLowerCase().includes('tivimate'))) {
-          const tivimateApp = INITIAL_APPS.find((a) => a.id === 'tivimate');
-          if (tivimateApp) {
-            upgraded.splice(3, 0, tivimateApp);
-          }
-        }
-        if (!upgraded.some((a) => a.id === 'xfinity' || a.name.toLowerCase().includes('xfinity'))) {
-          const xfinityApp = INITIAL_APPS.find((a) => a.id === 'xfinity');
-          if (xfinityApp) {
-            upgraded.splice(4, 0, xfinityApp);
-          }
-        }
-
         return upgraded;
       }
     } catch {}
-    return INITIAL_APPS;
+    // On the TV, start with only the real system entry; installed apps are added by the scan.
+    const onTv = typeof window !== 'undefined' && !!(window as any).AndroidBridge?.isNative?.();
+    return onTv ? INITIAL_APPS.filter((a) => a.id === 'android-settings') : INITIAL_APPS;
   });
 
   const [activeModal, setActiveModal] = useState<'all-apps' | null>(null);
@@ -281,6 +273,7 @@ export default function App() {
           if (Array.isArray(installedList) && installedList.length > 0) {
             setApps((prevApps) => {
               const updated = [...prevApps];
+              const matchedIds = new Set<string>();
 
               installedList.forEach((item) => {
                 const pkgLower = item.package.toLowerCase();
@@ -296,6 +289,7 @@ export default function App() {
 
                 if (existingIndex >= 0) {
                   const currentApp = updated[existingIndex];
+                  matchedIds.add(currentApp.id);
                   updated[existingIndex] = {
                     ...currentApp,
                     iconUrl: item.icon || currentApp.iconUrl,
@@ -370,10 +364,23 @@ export default function App() {
                   };
                   newTvApp.backdropUrl = getAppBackdrop(newTvApp, settings.appBackdrops);
                   updated.push(newTvApp);
+                  matchedIds.add(newTvApp.id);
                 }
               });
 
-              return updated;
+              // Drop the built-in placeholder apps (Netflix, Hulu, ...) that are not actually installed
+              const placeholderIds = new Set(INITIAL_APPS.map((a) => a.id));
+              const kept = updated.filter(
+                (a) => !placeholderIds.has(a.id) || a.id === 'android-settings' || matchedIds.has(a.id)
+              );
+              // Never leave the home row empty: pin the first few real apps if nothing is pinned
+              if (!kept.some((a) => a.inDock)) {
+                let pinned = 0;
+                return kept.map((a) =>
+                  a.id !== 'android-settings' && pinned++ < 8 ? { ...a, inDock: true } : a
+                );
+              }
+              return kept;
             });
           }
         }
@@ -522,6 +529,14 @@ export default function App() {
   const handleAddCustomApp = (newApp: AppItem) => {
     setApps((prev) => [newApp, ...prev]);
   };
+
+  // Night Mode: dim and warm everything late at night (re-checked every 30 s)
+  const [, setNightTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setNightTick((n) => n + 1), 30000);
+    return () => clearInterval(t);
+  }, []);
+  const nightActive = isNightModeActive(settings.nightMode);
 
   // Ambient mode: after a few idle minutes on Home, drift into full-screen photography + clock
   const [ambientActive, setAmbientActive] = useState<boolean>(false);
@@ -697,6 +712,11 @@ export default function App() {
           />
         );
       })()}
+
+      <div
+        className="fixed inset-0 z-[70] pointer-events-none transition-opacity duration-[1500ms]"
+        style={{ background: 'rgba(24, 10, 0, 0.42)', opacity: nightActive ? 1 : 0 }}
+      />
 
       {ambientActive && <AmbientMode settings={settings} onWake={wakeAmbient} />}
     </main>

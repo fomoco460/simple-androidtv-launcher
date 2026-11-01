@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   LauncherSettings,
+  AmbientPhotoSet,
+  ClockStyle,
+  NightMode,
   BackgroundPreset,
   AppsDisplayPreset,
   FontPreset,
@@ -103,6 +106,42 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
   ];
 
   // Helper to cycle through array
+  const AMBIENT_OPTIONS = [0, 2, 5, 10, 20];
+  const PHOTO_SETS: { id: AmbientPhotoSet; label: string }[] = [
+    { id: 'smart', label: 'Smart mix' },
+    { id: 'cleanframe', label: 'Landscapes' },
+    { id: 'space', label: 'Space (NASA)' },
+  ];
+  const NIGHT_MODES: { id: NightMode; label: string }[] = [
+    { id: 'off', label: 'Off' },
+    { id: 'auto', label: 'Auto 10pm-6am' },
+    { id: 'always', label: 'Always' },
+  ];
+  const CLOCK_STYLES: { id: ClockStyle; label: string }[] = [
+    { id: 'standard', label: 'Standard' },
+    { id: 'large', label: 'Large' },
+    { id: 'minimal', label: 'Time only' },
+  ];
+  const nextOf = <T extends { id: string }>(list: T[], current: string): T =>
+    list[(Math.max(0, list.findIndex((o) => o.id === current)) + 1) % list.length];
+
+  const activateExtra = (i: number) => {
+    if (i === 0) cycleSound('theme');
+    else if (i === 1) cycleSound('volume');
+    else if (i === 2) {
+      const cur = AMBIENT_OPTIONS.indexOf(settings.ambientMinutes);
+      onUpdateSettings({ ambientMinutes: AMBIENT_OPTIONS[(cur + 1) % AMBIENT_OPTIONS.length] });
+    } else if (i === 3) onUpdateSettings({ ambientPhotos: nextOf(PHOTO_SETS, settings.ambientPhotos).id });
+    else if (i === 4) onUpdateSettings({ nightMode: nextOf(NIGHT_MODES, settings.nightMode).id });
+    else if (i === 5) onUpdateSettings({ clockStyle: nextOf(CLOCK_STYLES, settings.clockStyle).id });
+    else if (i === 6) onUpdateSettings({ tempUnit: settings.tempUnit === 'C' ? 'F' : 'C' });
+    else onOpenLocationModal?.();
+  };
+  const extraRing = (i: number) =>
+    activeRow === extrasRow && extraIndex === i ? 'ring-2 ring-white ring-offset-2 ring-offset-black' : '';
+  const chipClass = (i: number) =>
+    `px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-white ${extraRing(i)}`;
+
   const cycleSound = (which: 'theme' | 'volume') => {
     const list = which === 'theme' ? SOUND_THEMES : SOUND_VOLUMES;
     const current = which === 'theme' ? settings.soundTheme : settings.soundVolume;
@@ -157,7 +196,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
   const [focusZone, setFocusZone] = useState<'header' | 'content'>('content');
   const [headerIndex, setHeaderIndex] = useState<number>(1); // 0: Home, 1: Appearance, 2: Organize, 3: Android
   const [activeRow, setActiveRow] = useState<number>(0);
-  const [extraIndex, setExtraIndex] = useState<number>(0); // 0 sound, 1 volume, 2 ambient, 3 temp unit, 4 location
+  const [extraIndex, setExtraIndex] = useState<number>(0); // 0 sound, 1 volume, 2 ambient time, 3 ambient photos, 4 night, 5 clock, 6 temp unit, 7 location
   const [organizeZone, setOrganizeZone] = useState<'dock' | 'unpinned'>('dock');
   const [organizeDockIndex, setOrganizeDockIndex] = useState<number>(0);
   const [organizeUnpinnedIndex, setOrganizeUnpinnedIndex] = useState<number>(0);
@@ -542,25 +581,13 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
         e.preventDefault();
         if (isRight) {
           soundService.playMove();
-          setExtraIndex((prev) => Math.min(4, prev + 1));
+          setExtraIndex((prev) => Math.min(7, prev + 1));
         } else if (isLeft) {
           soundService.playMove();
           setExtraIndex((prev) => Math.max(0, prev - 1));
         } else {
           soundService.playSelect();
-          if (extraIndex === 0) {
-            cycleSound('theme');
-          } else if (extraIndex === 1) {
-            cycleSound('volume');
-          } else if (extraIndex === 2) {
-            const opts = [0, 2, 5, 10, 20];
-            const cur = opts.indexOf(settings.ambientMinutes);
-            onUpdateSettings({ ambientMinutes: opts[(cur + 1) % opts.length] });
-          } else if (extraIndex === 3) {
-            onUpdateSettings({ tempUnit: settings.tempUnit === 'C' ? 'F' : 'C' });
-          } else {
-            onOpenLocationModal?.();
-          }
+          activateExtra(extraIndex);
         }
       } else if (isRight) {
         e.preventDefault();
@@ -1474,64 +1501,54 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
             })()}
           </div>
 
-          {/* Quick TV settings: Sound, Weather */}
-          <div className="mt-2.5 flex flex-wrap items-center justify-center gap-3 text-xs text-white/60">
+          {/* Quick TV settings */}
+          <div className="mt-2.5 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-xs text-white/60">
             <div className="flex items-center gap-2">
               <span>Sound:</span>
-              <button
-                onClick={() => cycleSound('theme')}
-                className={`px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-white ${activeRow === extrasRow && extraIndex === 0 ? 'ring-2 ring-white ring-offset-2 ring-offset-black' : ''}`}
-              >
+              <button onClick={() => activateExtra(0)} className={chipClass(0)}>
                 {SOUND_THEMES.find((o) => o.id === settings.soundTheme)?.label}
               </button>
-              {settings.soundTheme !== 'off' && (
-                <button
-                  onClick={() => cycleSound('volume')}
-                  className={`px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-white ${activeRow === extrasRow && extraIndex === 1 ? 'ring-2 ring-white ring-offset-2 ring-offset-black' : ''}`}
-                >
-                  {SOUND_VOLUMES.find((o) => o.id === settings.soundVolume)?.label}
-                </button>
-              )}
+              <button onClick={() => activateExtra(1)} className={chipClass(1)}>
+                {SOUND_VOLUMES.find((o) => o.id === settings.soundVolume)?.label}
+              </button>
             </div>
             <span className="text-white/20">·</span>
             <div className="flex items-center gap-2">
               <span>Ambient:</span>
-              <button
-                onClick={() => {
-                  const opts = [0, 2, 5, 10, 20];
-                  const cur = opts.indexOf(settings.ambientMinutes);
-                  onUpdateSettings({ ambientMinutes: opts[(cur + 1) % opts.length] });
-                }}
-                className={`px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-white ${activeRow === extrasRow && extraIndex === 2 ? 'ring-2 ring-white ring-offset-2 ring-offset-black' : ''}`}
-                title="Idle time before the photo clock screen starts"
-              >
+              <button onClick={() => activateExtra(2)} className={chipClass(2)} title="Idle time before the photo clock screen starts">
                 {settings.ambientMinutes > 0 ? `${settings.ambientMinutes} min` : 'Off'}
+              </button>
+              <button onClick={() => activateExtra(3)} className={chipClass(3)} title="Photos used by Ambient Mode">
+                {PHOTO_SETS.find((o) => o.id === settings.ambientPhotos)?.label}
+              </button>
+            </div>
+            <span className="text-white/20">·</span>
+            <div className="flex items-center gap-2">
+              <span>Night:</span>
+              <button onClick={() => activateExtra(4)} className={chipClass(4)} title="Dim and warm the screen late at night">
+                {NIGHT_MODES.find((o) => o.id === settings.nightMode)?.label}
+              </button>
+            </div>
+            <span className="text-white/20">·</span>
+            <div className="flex items-center gap-2">
+              <span>Clock:</span>
+              <button onClick={() => activateExtra(5)} className={chipClass(5)} title="Clock size on Home and Ambient">
+                {CLOCK_STYLES.find((o) => o.id === settings.clockStyle)?.label}
               </button>
             </div>
             <span className="text-white/20">·</span>
             <div className="flex items-center gap-2">
               <span>Weather:</span>
-              <button
-                onClick={() =>
-                  onUpdateSettings({ tempUnit: settings.tempUnit === 'C' ? 'F' : 'C' })
-                }
-                className={`px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-white font-mono ${activeRow === extrasRow && extraIndex === 3 ? 'ring-2 ring-white ring-offset-2 ring-offset-black' : ''}`}
-                title="Toggle between Fahrenheit and Celsius"
-              >
+              <button onClick={() => activateExtra(6)} className={`${chipClass(6)} font-mono`} title="Toggle between Fahrenheit and Celsius">
                 °{settings.tempUnit || 'F'}
               </button>
               <button
-                onClick={() => {
-                  soundService.playSelect();
-                  onOpenLocationModal?.();
-                }}
-                className={`px-2 py-0.5 rounded bg-sky-500/20 hover:bg-sky-500/30 text-sky-200 hover:text-white flex items-center gap-1 cursor-pointer transition-colors ${activeRow === extrasRow && extraIndex === 4 ? 'ring-2 ring-white ring-offset-2 ring-offset-black' : ''}`}
+                onClick={() => activateExtra(7)}
+                className={`px-2 py-0.5 rounded bg-sky-500/20 hover:bg-sky-500/30 text-sky-200 hover:text-white flex items-center gap-1 cursor-pointer transition-colors ${extraRing(7)}`}
                 title="Change weather location"
               >
                 <MapPin className="w-3 h-3 text-sky-300" />
-                <span className="truncate max-w-[120px]">
-                  {settings.weatherCity || 'Set Location'}
-                </span>
+                <span className="truncate max-w-[120px]">{settings.weatherCity || 'Set Location'}</span>
               </button>
             </div>
           </div>

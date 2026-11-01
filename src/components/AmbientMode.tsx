@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { LauncherSettings } from '../types';
-import { CLEAN_FRAME_WALLPAPERS } from '../data/cleanFrameWallpapers';
+import { AMBIENT_PHOTOS, AmbientPhoto } from '../data/ambientPhotos';
+import { getDaypart, Daypart } from '../services/daypart';
 import { pushKeyOwner } from '../services/keyGate';
 import { weatherService, WeatherData } from '../services/weather';
 
@@ -10,6 +11,10 @@ interface AmbientModeProps {
 }
 
 const SLIDE_MS = 18000;
+
+// Smart Ambient: the photos get dimmer as the evening goes on
+const BRIGHTNESS: Record<Daypart, number> = { day: 0.6, evening: 0.5, night: 0.35 };
+const TEXT_ALPHA: Record<Daypart, number> = { day: 0.55, evening: 0.45, night: 0.32 };
 
 const useClock = (clockFormat: LauncherSettings['clockFormat']) => {
   const [now, setNow] = useState(() => new Date());
@@ -35,31 +40,48 @@ const useClock = (clockFormat: LauncherSettings['clockFormat']) => {
     ? `${String(now.getHours()).padStart(2, '0')}:${minutes}`
     : `${now.getHours() % 12 || 12}:${minutes}`;
   const date = now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
-  return { time, date };
+  return { now, time, date };
 };
+
+function shuffled<T>(list: T[]): T[] {
+  const a = [...list];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
 /**
  * Full-screen ambient mode: slow crossfading, gently drifting photography with a large clock.
- * Any remote button wakes it; that first press is swallowed so it never triggers an action.
+ * "Smart": uses the photo set you chose, gets dimmer through the evening, and shows only dark
+ * photos after dark. Any remote button wakes it; that first press is swallowed.
  */
 export const AmbientMode: React.FC<AmbientModeProps> = ({ settings, onWake }) => {
-  const [order] = useState(() => {
-    const list = [...CLEAN_FRAME_WALLPAPERS];
-    for (let i = list.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [list[i], list[j]] = [list[j], list[i]];
-    }
-    return list;
-  });
+  const { now, time, date } = useClock(settings.clockFormat);
+  const daypart = getDaypart(settings.nightMode, now);
+  const [broken, setBroken] = useState<Set<string>>(() => new Set());
+
+  const pool = useMemo(() => {
+    const wanted = settings.ambientPhotos;
+    let list: AmbientPhoto[] = AMBIENT_PHOTOS.filter((p) => wanted === 'smart' || p.set === wanted);
+    if (list.length === 0) list = AMBIENT_PHOTOS; // chosen set not installed: use whatever exists
+    const darkOnly = daypart !== 'day';
+    const toned = darkOnly ? list.filter((p) => p.tone === 'dark') : list;
+    const base = (toned.length > 0 ? toned : list).filter((p) => !broken.has(p.id));
+    return shuffled(base.length > 0 ? base : list);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings.ambientPhotos, daypart === 'day', broken]);
+
   const [index, setIndex] = useState(0);
-  const [weather, setWeather] = useState<WeatherData | null>(null);
-  const { time, date } = useClock(settings.clockFormat);
+  const safeIndex = pool.length > 0 ? index % pool.length : 0;
 
   useEffect(() => {
-    const t = setInterval(() => setIndex((i) => (i + 1) % order.length), SLIDE_MS);
+    const t = setInterval(() => setIndex((i) => i + 1), SLIDE_MS);
     return () => clearInterval(t);
-  }, [order.length]);
+  }, []);
 
+  const [weather, setWeather] = useState<WeatherData | null>(null);
   useEffect(() => {
     let alive = true;
     weatherService
@@ -71,7 +93,7 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ settings, onWake }) =>
     };
   }, [settings.tempUnit, settings.weatherLat, settings.weatherLon, settings.weatherCity]);
 
-  // Any input wakes ambient mode and is swallowed (capture phase) so it triggers nothing underneath.
+  // Any input wakes ambient mode and is swallowed (the key gate runs before every other listener).
   useEffect(() => {
     let armed = false;
     const arm = window.setTimeout(() => (armed = true), 400); // ignore the key release that started it
@@ -96,24 +118,35 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ settings, onWake }) =>
     };
   }, [onWake]);
 
-  const prev = (index - 1 + order.length) % order.length;
-  const next = (index + 1) % order.length;
+  const prev = pool.length > 0 ? (safeIndex - 1 + pool.length) % pool.length : 0;
+  const next = pool.length > 0 ? (safeIndex + 1) % pool.length : 0;
+  const current = pool[safeIndex];
+
+  const style = settings.clockStyle;
+  const timeSize =
+    style === 'large'
+      ? 'text-[7rem] md:text-[11rem]'
+      : 'text-[5.5rem] md:text-[8rem]';
+  const alpha = TEXT_ALPHA[daypart];
+  const showExtras = style !== 'minimal';
 
   return (
     <div className="fixed inset-0 z-[80] bg-black overflow-hidden select-none animate-ambientIn">
-      {order.map((wp, i) => {
-        const active = i === index;
+      {pool.map((p, i) => {
+        const active = i === safeIndex;
         return (
           <div
-            key={wp.id}
+            key={p.id}
             className="absolute inset-0 transition-opacity duration-[2500ms] ease-in-out"
             style={{ opacity: active ? 1 : 0 }}
           >
-            {(i === index || i === prev || i === next) && (
+            {(i === safeIndex || i === prev || i === next) && (
               <img
-                src={wp.src}
+                src={p.src}
                 alt=""
-                className={`w-full h-full object-cover brightness-[0.55] saturate-[0.9] ${i === index ? 'animate-ambientDrift' : ''}`}
+                onError={() => setBroken((b) => new Set(b).add(p.id))}
+                className={`w-full h-full object-cover ${i === safeIndex ? 'animate-ambientDrift' : ''}`}
+                style={{ filter: `brightness(${BRIGHTNESS[daypart]}) saturate(0.9)` }}
               />
             )}
           </div>
@@ -122,19 +155,33 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ settings, onWake }) =>
 
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/50" />
 
-      <div className="absolute left-14 bottom-12 md:left-20 md:bottom-16 text-white/55 drop-shadow-[0_2px_18px_rgba(0,0,0,0.6)]">
-        <div className="text-[5.5rem] md:text-[8rem] font-extralight leading-none tracking-tight">{time}</div>
-        <div className="mt-2 text-xl md:text-3xl font-light text-white/50">{date}</div>
-        {weather && (
-          <div className="mt-1 text-base md:text-xl text-white/40">
-            {Math.round(weather.temperature)}°{settings.tempUnit || 'F'} · {weather.condition}
-          </div>
+      <div
+        className="absolute left-14 bottom-12 md:left-20 md:bottom-16 drop-shadow-[0_2px_18px_rgba(0,0,0,0.6)]"
+        style={{ color: `rgba(255,255,255,${alpha})` }}
+      >
+        <div className={`${timeSize} font-extralight leading-none tracking-tight`}>{time}</div>
+        {showExtras && (
+          <>
+            <div className="mt-2 text-xl md:text-3xl font-light" style={{ opacity: 0.9 }}>
+              {date}
+            </div>
+            {settings.showWeather !== false && weather && (
+              <div className="mt-1 text-base md:text-xl" style={{ opacity: 0.75 }}>
+                {Math.round(weather.temperature)}°{settings.tempUnit || 'F'} · {weather.condition}
+              </div>
+            )}
+          </>
         )}
       </div>
 
-      <div className="absolute right-14 bottom-12 md:right-20 md:bottom-16 text-white/30 text-sm md:text-base">
-        {order[index].name}
-      </div>
+      {current && showExtras && (
+        <div
+          className="absolute right-14 bottom-12 md:right-20 md:bottom-16 text-sm md:text-base"
+          style={{ color: `rgba(255,255,255,${alpha * 0.55})` }}
+        >
+          {current.name}
+        </div>
+      )}
     </div>
   );
 };

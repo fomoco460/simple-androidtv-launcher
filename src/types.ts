@@ -58,6 +58,9 @@ export interface LauncherSettings {
   font: FontPreset;
   homeControls: HomeControlsPreset;
   uiScale?: UiScalePreset; // TV 10-foot scale for 4K TV / living room viewing distance
+  clockStyle: ClockStyle; // standard | large | minimal (time only)
+  nightMode: NightMode; // dim and warm the launcher late at night
+  ambientPhotos: AmbientPhotoSet; // which photo set Ambient Mode uses
   ambientMinutes: number; // idle minutes on Home before Ambient Mode starts (0 = off)
   soundTheme: SoundTheme;
   soundVolume: SoundVolume;
@@ -86,3 +89,7 @@ export interface AppItem {
   description?: string;
   backdropUrl?: string; // Predefined or custom backdrop image/canvas data URI
 }
+
+export type ClockStyle = 'standard' | 'large' | 'minimal';
+export type NightMode = 'off' | 'auto' | 'always';
+export type AmbientPhotoSet = 'smart' | 'cleanframe' | 'space';
