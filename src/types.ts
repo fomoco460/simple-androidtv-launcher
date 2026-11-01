@@ -58,6 +58,7 @@ export interface LauncherSettings {
   font: FontPreset;
   homeControls: HomeControlsPreset;
   uiScale?: UiScalePreset; // TV 10-foot scale for 4K TV / living room viewing distance
+  ambientMinutes: number; // idle minutes on Home before Ambient Mode starts (0 = off)
   soundTheme: SoundTheme;
   soundVolume: SoundVolume;
   clockFormat?: 'auto' | '12h' | '24h';

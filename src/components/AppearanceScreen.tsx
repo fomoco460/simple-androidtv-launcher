@@ -157,7 +157,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
   const [focusZone, setFocusZone] = useState<'header' | 'content'>('content');
   const [headerIndex, setHeaderIndex] = useState<number>(1); // 0: Home, 1: Appearance, 2: Organize, 3: Android
   const [activeRow, setActiveRow] = useState<number>(0);
-  const [extraIndex, setExtraIndex] = useState<number>(0); // 0 sound, 1 volume, 2 temp unit, 3 location
+  const [extraIndex, setExtraIndex] = useState<number>(0); // 0 sound, 1 volume, 2 ambient, 3 temp unit, 4 location
   const [organizeZone, setOrganizeZone] = useState<'dock' | 'unpinned'>('dock');
   const [organizeDockIndex, setOrganizeDockIndex] = useState<number>(0);
   const [organizeUnpinnedIndex, setOrganizeUnpinnedIndex] = useState<number>(0);
@@ -542,7 +542,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
         e.preventDefault();
         if (isRight) {
           soundService.playMove();
-          setExtraIndex((prev) => Math.min(3, prev + 1));
+          setExtraIndex((prev) => Math.min(4, prev + 1));
         } else if (isLeft) {
           soundService.playMove();
           setExtraIndex((prev) => Math.max(0, prev - 1));
@@ -553,6 +553,10 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
           } else if (extraIndex === 1) {
             cycleSound('volume');
           } else if (extraIndex === 2) {
+            const opts = [0, 2, 5, 10, 20];
+            const cur = opts.indexOf(settings.ambientMinutes);
+            onUpdateSettings({ ambientMinutes: opts[(cur + 1) % opts.length] });
+          } else if (extraIndex === 3) {
             onUpdateSettings({ tempUnit: settings.tempUnit === 'C' ? 'F' : 'C' });
           } else {
             onOpenLocationModal?.();
@@ -1491,12 +1495,27 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
             </div>
             <span className="text-white/20">·</span>
             <div className="flex items-center gap-2">
+              <span>Ambient:</span>
+              <button
+                onClick={() => {
+                  const opts = [0, 2, 5, 10, 20];
+                  const cur = opts.indexOf(settings.ambientMinutes);
+                  onUpdateSettings({ ambientMinutes: opts[(cur + 1) % opts.length] });
+                }}
+                className={`px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-white ${activeRow === extrasRow && extraIndex === 2 ? 'ring-2 ring-white ring-offset-2 ring-offset-black' : ''}`}
+                title="Idle time before the photo clock screen starts"
+              >
+                {settings.ambientMinutes > 0 ? `${settings.ambientMinutes} min` : 'Off'}
+              </button>
+            </div>
+            <span className="text-white/20">·</span>
+            <div className="flex items-center gap-2">
               <span>Weather:</span>
               <button
                 onClick={() =>
                   onUpdateSettings({ tempUnit: settings.tempUnit === 'C' ? 'F' : 'C' })
                 }
-                className={`px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-white font-mono ${activeRow === extrasRow && extraIndex === 2 ? 'ring-2 ring-white ring-offset-2 ring-offset-black' : ''}`}
+                className={`px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-white font-mono ${activeRow === extrasRow && extraIndex === 3 ? 'ring-2 ring-white ring-offset-2 ring-offset-black' : ''}`}
                 title="Toggle between Fahrenheit and Celsius"
               >
                 °{settings.tempUnit || 'F'}
@@ -1506,7 +1525,7 @@ export const AppearanceScreen: React.FC<AppearanceScreenProps> = ({
                   soundService.playSelect();
                   onOpenLocationModal?.();
                 }}
-                className={`px-2 py-0.5 rounded bg-sky-500/20 hover:bg-sky-500/30 text-sky-200 hover:text-white flex items-center gap-1 cursor-pointer transition-colors ${activeRow === extrasRow && extraIndex === 3 ? 'ring-2 ring-white ring-offset-2 ring-offset-black' : ''}`}
+                className={`px-2 py-0.5 rounded bg-sky-500/20 hover:bg-sky-500/30 text-sky-200 hover:text-white flex items-center gap-1 cursor-pointer transition-colors ${activeRow === extrasRow && extraIndex === 4 ? 'ring-2 ring-white ring-offset-2 ring-offset-black' : ''}`}
                 title="Change weather location"
               >
                 <MapPin className="w-3 h-3 text-sky-300" />

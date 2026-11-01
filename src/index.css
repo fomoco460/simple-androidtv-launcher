@@ -127,3 +127,12 @@ video::-webkit-media-controls-overlay-play-button {
   width: 0;
   height: 0;
 }
+
+/* Ambient mode */
+@keyframes ambientIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ambientDrift {
+  from { transform: scale(1.04) translate3d(0, 0, 0); }
+  to { transform: scale(1.14) translate3d(-1.5%, -1%, 0); }
+}
+.animate-ambientIn { animation: ambientIn 1.6s ease-out both; }
+.animate-ambientDrift { animation: ambientDrift 24s ease-in-out both; will-change: transform; }

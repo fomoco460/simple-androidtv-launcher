@@ -8,6 +8,7 @@ import { AppLauncherModal } from './components/AppLauncherModal';
 import { LocationModal } from './components/LocationModal';
 import { InstallApkModal } from './components/InstallApkModal';
 import { WallpaperGalleryModal } from './components/WallpaperGalleryModal';
+import { AmbientMode } from './components/AmbientMode';
 import { AppContextMenu, AppMenuContext } from './components/AppContextMenu';
 import { AppBackdropModal } from './components/AppBackdropModal';
 import { soundService } from './services/sound';
@@ -29,6 +30,7 @@ const DEFAULT_SETTINGS: LauncherSettings = {
   font: 'Manrope',
   homeControls: 'both',
   uiScale: 'auto',
+  ambientMinutes: 5,
   soundTheme: 'click',
   soundVolume: 'medium',
   clockFormat: 'auto',
@@ -49,6 +51,7 @@ export default function App() {
           ...DEFAULT_SETTINGS,
           ...parsed,
           clockFormat: parsed.clockFormat || 'auto',
+          ambientMinutes: typeof parsed.ambientMinutes === 'number' ? parsed.ambientMinutes : 5,
           soundTheme: parsed.soundTheme ?? (parsed.soundEffects === false ? 'off' : 'click'),
           soundVolume: parsed.soundVolume ?? 'medium',
           iconStyle: 'stock', // locked to stock app icons
@@ -520,6 +523,10 @@ export default function App() {
     setApps((prev) => [newApp, ...prev]);
   };
 
+  // Ambient mode: after a few idle minutes on Home, drift into full-screen photography + clock
+  const [ambientActive, setAmbientActive] = useState<boolean>(false);
+  const wakeAmbient = React.useCallback(() => setAmbientActive(false), []);
+
   const isAnyModalActive =
     showLocationModal ||
     showApkModal ||
@@ -528,6 +535,27 @@ export default function App() {
     !!activeModal ||
     !!appMenu ||
     !!launchingApp;
+
+  useEffect(() => {
+    const idleOk =
+      settings.ambientMinutes > 0 &&
+      settings.activeView === 'home' &&
+      !isAnyModalActive &&
+      !ambientActive;
+    if (!idleOk) return;
+    let timer = window.setTimeout(() => setAmbientActive(true), settings.ambientMinutes * 60000);
+    const reset = () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => setAmbientActive(true), settings.ambientMinutes * 60000);
+    };
+    const events = ['keydown', 'mousemove', 'mousedown', 'touchstart', 'chromecast-back-press', 'chromecast-select-long'];
+    events.forEach((n) => window.addEventListener(n, reset, true));
+    return () => {
+      window.clearTimeout(timer);
+      events.forEach((n) => window.removeEventListener(n, reset, true));
+    };
+  }, [settings.ambientMinutes, settings.activeView, isAnyModalActive, ambientActive]);
+
 
   return (
     <main
@@ -670,6 +698,7 @@ export default function App() {
         );
       })()}
 
+      {ambientActive && <AmbientMode settings={settings} onWake={wakeAmbient} />}
     </main>
   );
 }

@@ -1,5 +1,6 @@
 import { useEffect, useRef, RefObject } from 'react';
 import { soundService } from '../services/sound';
+import { pushKeyOwner } from '../services/keyGate';
 
 /**
  * D-pad (remote) navigation for any screen or modal.
@@ -202,9 +203,9 @@ export function useSpatialNav({
     };
 
     // Capture phase + stopImmediatePropagation: this screen owns the keys while it is open.
-    window.addEventListener('keydown', handler, true);
+    const removeOwner = pushKeyOwner((e) => handler(e as KeyboardEvent), ['keydown']);
     return () => {
-      window.removeEventListener('keydown', handler, true);
+      removeOwner();
       // Never leave the on-screen keyboard (and its key capture) behind when a screen closes.
       nativeBridge()?.hideKeyboard?.();
     };
