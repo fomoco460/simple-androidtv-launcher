@@ -73,7 +73,10 @@ public class LauncherAccessibilityService extends AccessibilityService {
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if (event == null) return;
 
-        // Only react to window state changes when the stock launcher tries to take foreground
+        // Only react when the stock launcher's actual HOME screen takes the foreground. The stock launcher
+        // process also draws system dialogs and panels (network / Wi-Fi messages, notifications, volume,
+        // input pickers); yanking Clean Launcher to the front for those kicked the user out of the app
+        // they were watching, so those windows must be left alone.
         if (event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             CharSequence packageName = event.getPackageName();
             if (packageName != null) {
@@ -81,11 +84,28 @@ public class LauncherAccessibilityService extends AccessibilityService {
                 if (GOOGLE_TV_LAUNCHER.equals(pkg) ||
                     ANDROID_TV_LAUNCHER.equals(pkg) ||
                     FIRE_TV_LAUNCHER.equals(pkg)) {
-                    Log.d(TAG, "Stock TV launcher window detected (" + pkg + "), redirecting to Clean Launcher");
-                    bringLauncherToFront();
+                    CharSequence cls = event.getClassName();
+                    String name = cls != null ? cls.toString() : "";
+                    Log.d(TAG, "Stock launcher window: " + pkg + " / " + name);
+                    if (isStockHomeScreen(name)) {
+                        Log.d(TAG, "Stock TV home screen detected, redirecting to Clean Launcher");
+                        bringLauncherToFront();
+                    }
                 }
             }
         }
+    }
+
+    /** True only for the stock launcher's home activity, not for dialogs, panels or overlays. */
+    private static boolean isStockHomeScreen(String className) {
+        if (className.isEmpty()) return false;
+        // Dialogs and overlays report framework classes (android.app.Dialog, android.widget.FrameLayout, ...)
+        if (className.startsWith("android.") || className.startsWith("androidx.")) return false;
+        return className.endsWith("HomeActivity")
+            || className.endsWith("HomeScreenActivity")
+            || className.endsWith("TvHomeActivity")
+            || className.equals("com.google.android.tvlauncher.MainActivity")
+            || className.equals("com.amazon.firetv.launcher.MainActivity");
     }
 
     @Override
